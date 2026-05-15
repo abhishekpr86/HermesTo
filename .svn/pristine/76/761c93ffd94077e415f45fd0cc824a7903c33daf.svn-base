@@ -1,0 +1,62 @@
+package com.capgemini.onboarding.dao.impl;
+
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Repository;
+
+import com.capgemini.onboarding.dao.UserManagementDao;
+import com.capgemini.onboarding.util.CommonUtil;
+
+/**
+ * The Class UserManagementDaoImpl.
+ */
+@Repository
+@Scope(BeanDefinition.SCOPE_SINGLETON)
+public class UserManagementDaoImpl implements UserManagementDao {
+
+	private Logger logger = Logger.getLogger(UserManagementDao.class);
+
+	/** The sqldao impl. */
+	@Autowired
+	private SQLDAOImpl sqldaoImpl;
+
+	/**
+	 * Sets the sqldao impl.
+	 *
+	 * @param sqldaoImpl
+	 *            the new sqldao impl
+	 */
+	public void setSqldaoImpl(SQLDAOImpl sqldaoImpl) {
+		this.sqldaoImpl = sqldaoImpl;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.capgemini.hermes.dao.UserManagementDao#changeUserPassword(java.lang.
+	 * String, java.lang.String)
+	 */
+	@Override
+	public int changeUserPassword(String username, String newpassword, String oldPassword) {
+
+		List<?> passwordList = sqldaoImpl
+				.executeSQLSelect("select password from users where username = '" + username + "'");
+		String storedPassword = (String) passwordList.get(0);
+
+		if (CommonUtil.comparePassword(oldPassword, storedPassword) == false) {
+			return 0;
+		}
+		logger.info("newpassword :"+newpassword);
+		newpassword = CommonUtil.getPasswordBcrypt(newpassword);
+		String sqlQuery = "Update users set password = '" + newpassword + "', isFirstLogin='0' where username = '" + username + "'"; // enabled as false so that on 2nd login changing pwd wont be called.
+		//UPDATE `users` set enabled='0' WHERE username='bmanjrek'
+		return sqldaoImpl.executeSQLUpdateQuery(sqlQuery);
+
+	}
+
+}

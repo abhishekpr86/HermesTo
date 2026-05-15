@@ -1,0 +1,60 @@
+username: SVC-FR-HERMESACCOUNT@capgemini.com
+password: Hermes20100
+from: donotreply@capgemini.com
+host: gmr10.capgemini.com
+port: 25
+testMailId: subash.rout@capgemini.com
+template: 
+    P001NN3:
+            subject: PSA HERMES Welcome email #~emailNo~ – please read carefully
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font>Hi ~firstName~, 
+                  <br/><br/>Welcome to the HERMES program!<br/><br/>This second mail is about the <b>technical information for you to 
+                     connect the PSA environments.</b>  Please keep it as you will have to refer this email as long as you work on HERMES program.
+                     <br/><br/><b>To work on PSA environment, you have a Virtual Machine (VM), named 'PSALib', and credentials on PSA infrastructure. 
+                     </b><br/>First access is a bit complex and you must successfully connect your PSALib in order to take delivery commitment<br/><br/>
+                     <b>Your credentials:-</b><br/><br/><html><body><table style='border:1px solid black'><table border=1><tr>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FamilyName(Nom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FirstName(Prénom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>Location</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>Status</th><th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>
+                     VM Number</th><th style='background-color:rgb(16, 144, 208);color:white;'>PCA Email</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>PCA ID</th></tr><tr><td style='background-color:rgb(249, 211, 17)'>~lastName~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~firstName~</td><td style='background-color:rgb(249, 211, 17)'>~location~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>Done</td><td style='background-color:rgb(249, 211, 17)'>VM= ~vmNumber~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~PCAEmail~</td><td style='background-color:rgb(249, 211, 17)'>~psaId~</td></tr></table>
+                     </body></html><br/><br/><span style='color:rgb(28, 67, 113);'>By default, the temporary password is composed by :</span><br/><br/>
+                     <span style='color:rgb(28, 67, 113);'>1st letter of first name (Upper Case)</span></br><span style='color:rgb(28, 67, 113);'>
+                     1st letter of last name (Lower case)</span></br><span style='color:rgb(28, 67, 113);'>Birthday (MMDDYY)</span><br/><br/><b>Step1- Check your prerequisites</b>
+                     <br/>       Check Capgemini global Confluence access:- <a href:https://e-3d-jira.capgemini.com/confluence/welcome.action>https://e-3d-jira.capgemini.com/confluence/welcome.action</a>. 
+                     In case of issue, contact your PMO, DL IN PMO HERMES pmohermes.in@capgemini.com</br>      
+                      Check Cisco Anyconnect (outside Capgemini network, you can use shared mobile connection). In case of issue contact IT Help support<br/><br/>
+                      <b>Step2:- Reach your PSALib/PSA VM following the information detailed here <a href:https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113847 >
+                      https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113847</a></b><br/>       
+                      This access to the PSALib is available from Capgemini Hermes dedicated and secured spaces.<br/>       
+                      From outside Capgemini, it will work only if you have a HRA access, requested for you by your EM. You can use a shared mobile connection.<br/><br/>
+                      The following pages on Confluence may help you:<br/><ul><li><b>Problem Solver:</b> 
+                      <a href:https://e-3d-jira.capgemini.com/confluence/display/HERK/Problem+Solver>https://e-3d-jira.capgemini.com/confluence/display/HERK/Problem+Solver</a> 
+                      and many tips <a href:https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113801>https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113801</a></li>
+                      <li><b>Information on ASLs delegates, i.e. the Administrateur Sécurité Logique/Logical Security Administrators delegates,</b> to help you connect PSA systems  - 
+                      <a href:https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113945>https://e-3d-jira.capgemini.com/confluence/pages/viewpage.action?pageId=18113945</a></li></ul>
+                      <b>Best Regards,</b><br/><b>HERMES PMO Team <a href:mailto:pmohermes.in@capgemini.com>(pmohermes.in@capgemini.com)</a> 
+                     </b></font></span></font></div>
+            from: harmes
+    P001NN2:
+            subject: Onboarding of ~FirstName~ ~LastName~ on ~BIS~
+            body: Hello<br>
+                  Please be informed that the onboarding process has started for ~FirstName~ ~LastName~ on ~BIS~.<br>
+                   Requestor - ~Requestor~ <br>
+                   Manager - ~mgnr~ <br>
+                   EM  - ~EM~<br>
+                   BEM - ~BEM~<br>
+                   Onboarding date - ~onbdate~<br>
+                   Planned offboarding date - ~pdate~<br>
+                   Location - ~loc~ <br>  
+                   <br>
+                   <br>
+                   <br>
+                    Best Regards,<br>
+                    Onboarding Tool Team.<br>
+                                
+            from: harmes 5

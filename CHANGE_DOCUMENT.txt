@@ -1,0 +1,335 @@
+================================================================================
+  HERMES ONBOARDING TOOL — PHASE 1 SECURITY CHANGES
+  Change Document
+  Date       : May 14, 2026
+  Project    : Hermes Onboarding Tool (com.capgemini.tool:onboarding)
+  Author     : GitHub Copilot (assisted)
+  Phase      : Phase 1 — Security Fixes
+================================================================================
+
+--------------------------------------------------------------------------------
+CHANGE 1 — SQL INJECTION FIX
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/dao/impl/UserManagementDaoImpl.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The changeUserPassword() method built SQL queries by concatenating user input
+  directly into the query string. This allowed an attacker to manipulate the SQL
+  statement (SQL Injection — OWASP Top 10 A03).
+
+  BEFORE (vulnerable):
+    String sql = "select password from users where username = '" + username + "'";
+    String updateSql = "update users set password = '" + newpass + "' where username = '" + username + "'";
+
+  AFTER (fixed):
+    session.createNativeQuery("SELECT password FROM users WHERE username = :username")
+           .setParameter("username", username)
+           .uniqueResult();
+
+    session.createNativeQuery(
+               "UPDATE users SET password = :password, isFirstLogin = '0' WHERE username = :username")
+           .setParameter("password", hashedNewPassword)
+           .setParameter("username", username)
+           .executeUpdate();
+
+Fix Applied:
+  - Replaced string concatenation with named parameters (:username, :password)
+  - Used Hibernate's setParameter() to bind values safely
+  - Removed dependency on SQLDAOImpl; uses injected SessionFactory directly
+
+--------------------------------------------------------------------------------
+CHANGE 2 — PLAINTEXT PASSWORD LOGGING REMOVED
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/util/CommonUtil.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The getPasswordBcrypt() method logged the raw plaintext password to the
+  application log file. Any person with log file access could read user passwords
+  (Sensitive Data Exposure — OWASP Top 10 A02).
+
+  BEFORE (vulnerable):
+    logger.info("getPasswordBcrypt password :" + password);   // <-- logs plaintext
+
+  AFTER (fixed):
+    Line removed entirely. No password is logged.
+
+Fix Applied:
+  - Removed the logger.info() call that logged the plaintext password
+
+--------------------------------------------------------------------------------
+CHANGE 3 — INSECURE MD5 PASSWORD HASHING METHOD REMOVED
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/util/CommonUtil.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  CommonUtil contained a getPasswordMD5() method that hashed passwords using MD5.
+  MD5 is cryptographically broken — it is fast to brute-force and has known
+  collision vulnerabilities. It must not be used for password storage
+  (Cryptographic Failures — OWASP Top 10 A02).
+
+  BEFORE (vulnerable):
+    public static String getPasswordMD5(String password) {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(password.getBytes());
+        BigInteger bigInt = new BigInteger(1, md.digest());
+        return bigInt.toString(16);
+    }
+
+  AFTER (fixed):
+    Method removed entirely.
+
+Fix Applied:
+  - Deleted getPasswordMD5() method
+  - Removed unused imports: BigInteger, MessageDigest, NoSuchAlgorithmException
+  - BCrypt (already present via getPasswordBcrypt / comparePassword) is the only
+    password hashing mechanism remaining
+
+--------------------------------------------------------------------------------
+CHANGE 4 — RACE CONDITION IN MOODLE CONTROLLER FIXED
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/MoodleController.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  Spring controllers are singletons — one instance shared across all requests.
+  Three fields were declared as shared instance variables:
+    private String absolutePath;
+    private HttpSession session;
+    private String role_id;
+
+  In concurrent requests, one user's session/role could overwrite another user's,
+  causing wrong data to be served or security checks to be bypassed.
+
+  BEFORE (vulnerable):
+    public class MoodleController {
+        private String absolutePath;      // shared — race condition
+        private HttpSession session;      // shared — race condition
+        private String role_id;           // shared — race condition
+    }
+
+  AFTER (fixed):
+    public class MoodleController {
+        // No shared mutable state
+        // session and role_id declared locally inside each method that needs them
+    }
+
+Fix Applied:
+  - Removed all three instance variables
+  - session declared as: HttpSession session = request.getSession(); (per-method)
+  - role_id declared as: String role_id = (String) session.getAttribute("RoleName"); (per-method)
+
+--------------------------------------------------------------------------------
+CHANGE 5 — PATH TRAVERSAL ATTACK PREVENTION
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/MoodleController.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The downloadFile() and downloadFiles() methods accepted a filename from the URL
+  path variable and used it directly to open a file. An attacker could supply
+  "../../../etc/passwd" or similar sequences to read arbitrary files from the server
+  (Path Traversal — OWASP Top 10 A01).
+
+  BEFORE (vulnerable):
+    public void downloadFile(@PathVariable("file") String file, ...) {
+        File metricsReportFile = new File(absolutePath + file);  // no validation
+        InputStream is = new FileInputStream(metricsReportFile);
+        ...
+    }
+
+  AFTER (fixed):
+    // Step 1 — regex: only word chars, hyphens, dots allowed
+    private static final Pattern SAFE_FILENAME = Pattern.compile("[\\w\\-\\.]+");
+
+    if (!SAFE_FILENAME.matcher(file).matches()) {
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid filename");
+        return;
+    }
+    // Step 2 — canonical path check: file must stay inside tmpdir
+    File metricsReportFile = new File(System.getProperty("java.io.tmpdir"), file);
+    if (!metricsReportFile.getCanonicalPath().startsWith(
+            new File(System.getProperty("java.io.tmpdir")).getCanonicalPath())) {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        return;
+    }
+
+Fix Applied:
+  - Added SAFE_FILENAME regex pattern (only alphanumeric, hyphen, dot, underscore)
+  - Added canonical path check against java.io.tmpdir in downloadFile()
+  - Added canonical path check against java.io.tmpdir in downloadFiles()
+  - Both checks applied as a two-layer defence
+
+--------------------------------------------------------------------------------
+CHANGE 6 — HARDCODED WINDOWS FILE PATH REMOVED (MOODLE CONTROLLER)
+--------------------------------------------------------------------------------
+File    : src/main/java/com/capgemini/onboarding/MoodleController.java
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  createFile() and createMoodleReportFile() used hardcoded Windows paths:
+    new File("Moodle-Enrolment.csv")           // relative path — unpredictable
+    "C:/OnboardingToolExport/"                  // Windows-only, may not exist
+
+  These cause failures when deployed on Linux/cloud servers and make the
+  application non-portable.
+
+  BEFORE:
+    File file = new File("Moodle-Enrolment.csv");
+    String path = "C:/OnboardingToolExport/";
+
+  AFTER:
+    File file = new File(System.getProperty("java.io.tmpdir"), "Moodle-Enrolment.csv");
+    String path = System.getProperty("java.io.tmpdir") + File.separator;
+
+Fix Applied:
+  - All file creation now uses System.getProperty("java.io.tmpdir")
+  - File.separator used instead of hardcoded "/" or "\"
+
+--------------------------------------------------------------------------------
+CHANGE 7 — HARDCODED LOG FILE PATH FIXED
+--------------------------------------------------------------------------------
+File    : src/main/resources/log4j.properties
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The log4j appender pointed to a hardcoded Windows path:
+    log4j.appender.file.File=C:/work/psa/onboarding/logs/onboard.log
+
+  This path does not exist on other machines or on Linux/cloud deployments.
+  Logging would silently fail on any non-developer machine.
+
+  BEFORE:
+    log4j.appender.file.File=C:/work/psa/onboarding/logs/onboard.log
+
+  AFTER:
+    log4j.appender.file.File=${catalina.home}/logs/onboard.log
+
+Fix Applied:
+  - Replaced hardcoded path with ${catalina.home} Tomcat system property
+  - Log file now writes to Tomcat's standard logs directory on any OS
+
+--------------------------------------------------------------------------------
+CHANGE 8 — SPRING FRAMEWORK VERSION UNIFIED
+--------------------------------------------------------------------------------
+File    : pom.xml
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The pom.xml had mixed Spring Framework versions — some dependencies on 4.2.5
+  and others on 4.3.30. Mixed versions can cause ClassLoader conflicts and
+  subtle runtime errors.
+
+  BEFORE:
+    <org.springframework-version>4.2.5.RELEASE</org.springframework-version>
+    (some deps manually overriding to 4.3.30.RELEASE)
+
+  AFTER:
+    <org.springframework-version>4.3.30.RELEASE</org.springframework-version>
+    (all Spring artifacts use the property — single version)
+
+Fix Applied:
+  - Set property org.springframework-version to 4.3.30.RELEASE
+  - All spring-* artifacts now use ${org.springframework-version}
+  - 4.3.30.RELEASE is the final patch release of the Spring 4.3.x line
+
+--------------------------------------------------------------------------------
+CHANGE 9 — SPRING SECURITY VERSION CORRECTED
+--------------------------------------------------------------------------------
+File    : pom.xml
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  Spring Security was specified as version 4.2.22.RELEASE — this version does
+  NOT exist on Maven Central. Eclipse could not download the JARs and showed:
+    "Build path references non existing library spring-security-core-4.2.22.RELEASE.jar"
+
+  BEFORE (broken):
+    <version>4.2.22.RELEASE</version>   ← does not exist
+
+  AFTER (fixed):
+    <version>4.2.13.RELEASE</version>   ← actual final release of 4.2.x
+
+  Artifacts fixed:
+    - spring-security-core
+    - spring-security-config
+    - spring-security-web
+    - spring-security-ldap
+
+Fix Applied:
+  - Changed all 4 Spring Security dependency versions to 4.2.13.RELEASE
+  - 4.2.13.RELEASE is the last published release of the Spring Security 4.2.x line
+
+--------------------------------------------------------------------------------
+CHANGE 10 — COMPILER DEPRECATION WARNINGS ENABLED
+--------------------------------------------------------------------------------
+File    : pom.xml
+Status  : ACCEPTED & APPLIED
+
+Problem:
+  The maven-compiler-plugin had no warning flags configured. Deprecated API
+  usage was silently ignored during builds, making it harder to detect code
+  that needs updating before migrating to Spring Boot 3 / Java 21.
+
+  BEFORE:
+    <configuration>
+        <source>1.8</source>
+        <target>1.8</target>
+    </configuration>
+
+  AFTER:
+    <configuration>
+        <source>1.8</source>
+        <target>1.8</target>
+        <compilerArgument>-Xlint:all</compilerArgument>
+        <showWarnings>true</showWarnings>
+        <showDeprecation>true</showDeprecation>
+    </configuration>
+
+Fix Applied:
+  - Added -Xlint:all compiler argument (enables all lint warnings)
+  - Added showWarnings=true and showDeprecation=true
+  - These warnings will surface deprecated API calls during mvn compile
+
+================================================================================
+CHANGES NOT YET APPLIED (DEFERRED BY USER)
+================================================================================
+
+The following were identified but deferred at user request:
+
+  DEFERRED-1  Credentials externalization
+              Files : servlet-context.xml, security-context.xml,
+                      activeDirectory.properties, PSA_Config.yml
+              Reason: User chose to keep credentials in files for now
+              Risk  : Hardcoded passwords (hermes@123, n9giejA8CY42Q4) visible
+                      in source control — OWASP Top 10 A07
+
+  DEFERRED-2  XSS protection in JSP views
+              Files : ReportController JSP views
+              Reason: Not yet implemented
+              Risk  : Unescaped model attributes rendered directly into HTML
+                      — OWASP Top 10 A03 (Cross-Site Scripting)
+
+================================================================================
+NEXT PHASES (PLANNED — NOT STARTED)
+================================================================================
+
+  Phase 2 — Spring Boot 3.x Migration
+    - Java 8 → Java 21 LTS
+    - Spring Boot 3.3.x parent POM
+    - C3P0 → HikariCP connection pool
+    - XML configs → Java @Configuration classes
+    - Hibernate 5 → Hibernate 6
+    - Log4j 1.x → Logback (SLF4J)
+    - Spring Security 4 → Spring Security 6
+
+  Phase 3 — REST API Layer
+  Phase 4 — React SPA Frontend
+  Phase 5 — JSP Decommission
+  Phase 6 — Performance & DevOps
+
+================================================================================
+END OF CHANGE DOCUMENT
+================================================================================

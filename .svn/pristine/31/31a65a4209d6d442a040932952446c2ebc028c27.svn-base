@@ -1,0 +1,373 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<%@ page session="false"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> ${hdList} - Head count && FTE  Report </title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/resources/css/datatables.min.css" />
+<link type="text/css" rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/common.css" />
+<link type="text/css" rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/theme.css" />
+<link type="text/css" rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/buttons.dataTables.min.css" />
+</head>
+<body>
+	<header class="main-header">
+		<div class="pull-left">
+			<h1 class="pull-left">Onboarding Tool</h1>
+		</div>
+		<nav class="pull-right">
+			<ul class="nav-new">
+
+
+				<li><a href="${pageContext.request.contextPath}/dashboard" title="DashBoard">DashBoard</a></li>
+
+             <c:if test="${checkUserType eq 'RM_PMO'}">
+					<li class="reports"><a title="User Management">User Management</a>
+					<ul class="reportsSubMenu">
+						 <li><a href="${pageContext.request.contextPath}/userManagement" title="userManagement">Add User</a></li>
+						<li><a href="${pageContext.request.contextPath}/addRole" title="userSearch">Add Role</a></li>
+					</ul></li>
+			</c:if>
+			
+			<c:if test="${checkUserType eq 'BundleEM'}">
+				<li><a href="${pageContext.request.contextPath}/addPreOnboardRec" title="Resource Pre-Onboarding">Resource Pre-Onboarding</a></li>
+			</c:if>
+			<c:if test="${(checkUserType eq 'BundleEM') or (checkUserType eq 'RM') or (checkUserTypeforUM ne null)}">
+				<li><a href="${pageContext.request.contextPath}/preOnboardingSearch" title="Edit Pre-Onboarding">View/Edit Pre-Onboarding</a></li>
+			</c:if>
+
+			
+			<c:if test="${(checkUserTypeforUM ne null) or (checkUserType eq 'RM_PMO')  or (checkUserType eq 'ASL')}">
+					<li><a href="${pageContext.request.contextPath}/allResourceList" title="Edit List">View / Edit Resources</a></li>
+			</c:if>
+			<c:if test="${(checkUserType eq 'ViewMode') or (checkUserType eq 'RM')}">
+					<li><a href="${pageContext.request.contextPath}/allResourceList" title="View List">View Resources</a></li>
+			</c:if>
+			
+			<c:if test="${checkUserType eq 'RM_PMO'}">
+					<li><a href="${pageContext.request.contextPath}/employeeSearch" title="Resource Off-boarding">Resource Off-boarding</a></li>
+			</c:if>		
+			
+				<li class="reports active"><a title="Reports">Reports</a>
+					<ul style="width:250px" class="reportsSubMenu">
+						<li><a href="${pageContext.request.contextPath}/report" title="Report">Resource
+								Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/reportOffBoarding"
+							title="Off Boarding Report">Off Boarding Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/hc&fteReport" title="HC&FTEReport">FTE
+								Report</a></li>
+				        <li><a href="${pageContext.request.contextPath}/dataInconsistencies" 
+							title="dataInconsistencies">Data Inconsistencies Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/orphanMgr" title="Orphan Report">Orphan Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/replacementEmployees" title="Replacement Employees">Replacement Employees Report</a></li>
+					</ul>
+				</li>
+				<li><a href="${pageContext.request.contextPath}/main" title="Change Password">Change
+						Password</a></li>
+				<li><a href="${pageContext.request.contextPath}/logout" title="Logout">Logout</a></li>
+			</ul>
+		</nav>
+	</header>
+	<section class="main-content">
+		<br />
+		<h2>FTE Report Country Wise for the next 6 months</h2>
+
+
+		<table id="summaryTblReport" class="summary-view-table dt-responsive">
+			
+			<thead>
+				<tr>
+					<th>Name of country</th>
+					<c:forEach var="i" begin="0" end="5">
+						<th style="text-align: right">${monthList.get(i)}</th>
+					</c:forEach>
+					<%-- <th><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(0)}/countryWise' />">Total</a></th>	 --%>
+				</tr>
+			</thead>
+
+			
+			<tbody>
+
+						<tr>
+							<td><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(0).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(0).countryName}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(0)}/countWise'/>">${franceCount.get(0)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(1)}/countWise' />">${franceCount.get(1)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(2)}/countWise' />">${franceCount.get(2)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(3)}/countWise' />">${franceCount.get(3)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(4)}/countWise' />">${franceCount.get(4)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/1/${monthList.get(5)}/countWise' />">${franceCount.get(5)}</a></td>
+						</tr>
+						
+						<tr>
+							<td><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(1).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(1).countryName}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(0)}/countWise'/>">${indiaCount.get(0)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(1)}/countWise' />">${indiaCount.get(1)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(2)}/countWise' />">${indiaCount.get(2)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(3)}/countWise' />">${indiaCount.get(3)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(4)}/countWise' />">${indiaCount.get(4)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/2/${monthList.get(5)}/countWise' />">${indiaCount.get(5)}</a></td>
+						</tr>
+						
+						<tr>
+							<td><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(2).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(2).countryName}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(0)}/countWise'/>">${chinaCount.get(0)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(1)}/countWise' />">${chinaCount.get(1)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(2)}/countWise' />">${chinaCount.get(2)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(3)}/countWise' />">${chinaCount.get(3)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(4)}/countWise' />">${chinaCount.get(4)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/3/${monthList.get(5)}/countWise' />">${chinaCount.get(5)}</a></td>
+						</tr>
+						
+						<tr>
+							<td><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(3).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(3).countryName}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(0)}/countWise'/>">${spainCount.get(0)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(1)}/countWise' />">${spainCount.get(1)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(2)}/countWise' />">${spainCount.get(2)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(3)}/countWise' />">${spainCount.get(3)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(4)}/countWise' />">${spainCount.get(4)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/4/${monthList.get(5)}/countWise' />">${spainCount.get(5)}</a></td>
+						</tr>
+						
+						<tr>
+							<td><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(4).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(4).countryName}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(0)}/countWise'/>">${moroccoCount.get(0)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(1)}/countWise' />">${moroccoCount.get(1)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(2)}/countWise' />">${moroccoCount.get(2)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(3)}/countWise' />">${moroccoCount.get(3)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(4)}/countWise' />">${moroccoCount.get(4)}</a></td>
+							<td style="text-align: right" ><a href="<c:url value='/hc&fteDynamicReport/5/${monthList.get(5)}/countWise' />">${moroccoCount.get(5)}</a></td>
+						</tr>
+						
+						<tr>
+						    <td bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(0)}/countryWise' />">Total</a></th>
+							<%-- <td bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/${countryList.get(5).countryId}/${monthList.get(0)}/countryWise' />">${countryList.get(5).countryName}</a></td> --%>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(0)}/countWise'/>">${totalCountPerMonthCountryWise.get(0)}</a></td>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(1)}/countWise' />">${totalCountPerMonthCountryWise.get(1)}</a></td>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(2)}/countWise' />">${totalCountPerMonthCountryWise.get(2)}</a></td>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(3)}/countWise' />">${totalCountPerMonthCountryWise.get(3)}</a></td>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(4)}/countWise' />">${totalCountPerMonthCountryWise.get(4)}</a></td>
+							<td style="text-align: right" bgcolor="#e0e0e0"><a href="<c:url value='/hc&fteDynamicReport/0/${monthList.get(5)}/countWise' />">${totalCountPerMonthCountryWise.get(5)}</a></td>
+						</tr>
+
+				
+			
+				
+			</tbody>
+		</table>
+
+
+<c:if test="${!empty fteMonthlyListCountryWise}">
+
+		
+			<h3 class="empLstsHD">FTE List - ${hdList}</h3>
+		
+		<!-- <input type="button" id="btnExport" value="Excel Export"
+				title="Excel Export" class="btn-primary" /> -->
+			&nbsp;
+			<br/>
+			<br/>
+		<table id="summaryTbl" class="summary-view-table dt-responsive">
+			<thead>
+			
+				<tr>
+                    <th width="80">Primary Program</th>
+					<th width="80">Emp ID</th>
+					<th width="80">Corp ID</th>
+					<th width="80">PSA ID</th>
+					<th width="80">Emp Type</th>
+					<th width="150">Emp First Name</th>
+					<th width="150">Emp Last Name</th>
+					<th width="50">Country</th>
+					<th width="50">Location</th>
+					<th width="10">Email</th>
+					<!-- <th width="10">Type</th> -->
+					<th width="50">Capgemini Entity</th>
+					<th width="50">Primary Skill </th>
+					<!-- <th width="50">Phase</th> -->
+					<!-- <th width="50">Vendor</th> --> 
+					<th width="50">Grade</th>
+					<th width="50">Global Grade</th>
+					<th width="50">Manager</th>
+					<!-- <th width="50">HRA Request</th> -->
+					<th width="50">On-boarding Date(YYYY-MM-DD)</th>
+					<th width="50">Planned Off-boarding Date(YYYY-MM-DD)</th>
+					<th width="50">Actual Off-boarding Date(YYYY-MM-DD)</th>
+					<th width="50">Bundle EM</th>
+					<th width="50">EM</th>
+					<th width="50">Offshore EM</th>
+					<th width="50">BIS</th>
+					<!-- <th width="50">Resource Manager</th>  -->
+					<th width="50">FTE - ${selectedMonth}</th>
+					
+					<c:choose>
+					<c:when test="${checkInputType ne null}">
+						<th width="50">FTE - ${second_month}</th>
+						<th width="50">FTE - ${third_month}</th>
+						<th width="50">FTE - ${fourth_month}</th>
+						<th width="50">FTE - ${fifth_month}</th>
+						<th width="50">FTE - ${sixth_month}</th>
+					</c:when>
+					
+					<c:otherwise>
+					
+						<th width="50" style="display:none;">FTE - ${second_month}</th>
+						<th width="50" style="display:none;">FTE - ${third_month}</th>
+						<th width="50" style="display:none;">FTE - ${fourth_month}</th>
+						<th width="50" style="display:none;">FTE - ${fifth_month}</th>
+						<th width="50" style="display:none;">FTE - ${sixth_month}</th>
+
+					</c:otherwise>
+					</c:choose>
+					
+				</tr>
+				
+			<thead>
+		
+			
+				<tbody>
+				<c:forEach items="${fteMonthlyListCountryWise}" var="employee">
+					<tr>
+					    <td>${employee.primaryprogram.primaryProgramName}</td>
+						<td>${employee.empId}</td>
+						<td>${employee.corpId}</td>
+						<td>${employee.psaId}</td>
+						<td>${employee.empType}</td>
+						<td>${employee.firstName}</td>
+						<td>${employee.lastName}</td>
+						<td>${employee.country.countryName}</td>
+						<td>${employee.location.stateName}</td>
+						<td>${employee.email}</td>
+						<%-- <td>${employee.heritageValue}</td> --%>
+						<td>${employee.cgEntity}</td>
+						<td>${employee.primaryTechnology.technologyName}</td>
+			            <%--   <td>${employee.phasevalue}</td> --%>
+						<%-- <td>${employee.vendor.vendorName}</td> --%>
+						<td>${employee.grade.name}</td>
+						<td>${employee.globalGrade.name}</td>
+						<td>${employee.manager.firstName}&nbsp;${employee.manager.lastName}</td>
+						<%-- <td>${employee.HRAReq}</td> --%>
+						<td>${employee.onboardingDate}</td>
+						<td>${employee.offboardingDate}</td>
+						<td>${employee.actualOffboardingDate}</td>
+						<td>${employee.bundleEM.bundleEmName}</td> 						
+						<td>${employee.EM.firstName}&nbsp;${employee.EM.lastName}</td> 
+						<td>${employee.offshoreEm.offshoreEmName}</td>
+						<td>${employee.bis.bis_Name}</td>
+					<%-- 	<td>${employee.resourceManager.resourceMgrName}</td> --%>
+						<td>${employee.monthlyFTE}</td>
+						
+						<c:choose>
+							<c:when test="${checkInputType ne null}">
+							<td>${employee.secondFTE}</td>
+							<td>${employee.thirdFTE}</td>
+							<td>${employee.fourthFTE}</td>
+							<td>${employee.fifthFTE}</td>
+							<td>${employee.sixthFTE}</td>
+							</c:when>
+						
+						<c:otherwise>
+							<td style="display:none;">${employee.secondFTE}</td>
+							<td style="display:none;">${employee.thirdFTE}</td>
+							<td style="display:none;">${employee.fourthFTE}</td>
+							<td style="display:none;">${employee.fifthFTE}</td>
+							<td style="display:none;">${employee.sixthFTE}</td>
+						
+						</c:otherwise>
+						</c:choose>
+						
+						
+						
+						
+						
+					
+					</tr>
+					</c:forEach>
+				</tbody>
+				
+			</table>
+		</c:if>
+
+
+
+	</section>
+
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/datatables.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.form-validator.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/date.js"></script>
+		<script type="text/javascript"
+			src="${pageContext.request.contextPath}/resources/js/tableExportEmp.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/fteReportTableExport.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.base64.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/dataTables.buttons.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/buttons.flash.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/buttons.html5.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jszip.min.js"></script>
+
+
+
+
+
+		<script type="text/javascript">
+	
+		$(document).ready(
+				
+				function() {				
+					
+					$('#summaryTbl').DataTable({
+						"scrollY": "400px",
+						"scrollX": true,
+				        "scrollCollapse": true,
+				        "paging": false,
+				        "responsive": false,
+				        "autoWidth": true ,
+				        "dom": "Bfrtip",
+				        "buttons": [
+				   	        	 {
+				   	                 extend: 'excelHtml5',
+				   	                 exportOptions: {
+				   	                	 columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 , 26, 27]
+				   	                 }
+				   	             },
+				   	        ],
+					});
+					
+				});
+			$(document).ready(
+					function() {
+						
+						$('#summaryTblReport').DataTable(
+								{
+									"scrollY" : "400px",
+									"scrollX" : true,
+									"scrollCollapse" : true,
+									"paging" : false,
+									"dom" : "Bfrtip"
+									
+									
+								});
+					
+					});
+		
+		
+	</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+username: SVC-FR-HERMESACCOUNT@capgemini.com
+password: Hermes20100
+from: donotreply@capgemini.com
+host: gmr10.capgemini.com
+port: 25
+testMailId: yogita.pawar@capgemini.com
+testSheduleMailId: yogita.pawar@capgemini.com
+template: 
+    P001NN3:
+            subject: PSA HERMES ~emailNo~ – Your PSA ID
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font>Hi ~firstName~, 
+                  <br/><br/><b>To work on PSA environment, you have a Virtual Machine (VM), named 'PSALib', and credentials on PSA infrastructure. 
+                     </b><br/><br/>This mail is about your PSA-ID. Virtual Machine (VM) creation is in progress. You will receive an additional mail when your VM is ready.<br/><br/>
+                     <b>Your credentials:-</b><br/><br/><html><body><table style='border:1px solid black'><table border=1><tr>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FamilyName(Nom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FirstName(Prénom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>Location</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>PCA ID</th></tr><tr><td style='background-color:rgb(249, 211, 17)'>~lastName~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~firstName~</td><td style='background-color:rgb(249, 211, 17)'>~location~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~psaId~</td></tr></table>
+                     </body></html><br/><br/><span style='color:rgb(28, 67, 113);'>By default, the temporary password is composed by :</span><br/><br/>
+                     <span style='color:rgb(28, 67, 113);'>1st letter of first name (Upper Case)</span></br><span style='color:rgb(28, 67, 113);'>
+                     1st letter of last name (Lower case)</span></br><span style='color:rgb(28, 67, 113);'>Birthday (MMDDYY)</span><br/><br/>
+                      <b>Best Regards,</b><br/><b>HERMES PMO Team <a href:mailto:pmohermes.in@capgemini.com>(pmohermes.in@capgemini.com)</a> 
+                     </b></font></span></font></div>
+            from: harmes
+    P001NN2:
+            subject: Onboarding of ~FirstName~ ~LastName~ on ~BIS~
+            body: Hello<br>
+                  Please be informed that the onboarding process has started for ~FirstName~ ~LastName~ on ~BIS~.<br>
+                   <br>
+                   Requestor - ~Requestor~ <br>
+                   <br>
+                   Manager - ~mgnr~ <br>
+                   <br>
+                   EM  - ~EM~<br>
+                   <br>
+                   BEM - ~BEM~<br>
+                   <br>
+                   Onboarding date - ~onbdate~<br>
+                   <br>
+                   Planned offboarding date - ~pdate~<br>
+                   <br>
+                   Location - ~loc~ <br>  
+                   <br>
+                   <br>
+                   <br>
+                    Best Regards,<br>
+                    Onboarding Tool Team.<br>
+                                
+            from: harmes 5

@@ -1,0 +1,14 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.List;
+import com.capgemini.onboarding.model.OffshoreEm;
+
+public interface OffshoreEmDao {
+	
+	public List<OffshoreEm> listOffshoreEm();
+	
+	public OffshoreEm getOffshoreById(int id);
+	
+	public List<OffshoreEm> listOffshoreEmPreonb();
+	
+}

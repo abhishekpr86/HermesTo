@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 2 Migration – Change Summary | Hermes Onboarding Tool</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 40px; color: #222; background: #f9f9f9; }
+  h1 { background: #1a1a2e; color: #fff; padding: 18px 24px; border-radius: 6px; margin-bottom: 8px; }
+  h2 { background: #16213e; color: #fff; padding: 10px 18px; border-radius: 4px; margin-top: 36px; }
+  h3 { color: #1a1a2e; margin-top: 24px; border-bottom: 2px solid #c0c8ff; padding-bottom: 4px; }
+  .meta { color: #555; font-size: 0.95em; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
+  th { background: #1a1a2e; color: #fff; padding: 9px 14px; text-align: left; }
+  td { padding: 8px 14px; border: 1px solid #dde; vertical-align: top; }
+  tr:nth-child(even) td { background: #f2f4ff; }
+  .before { background: #fff0f0 !important; font-family: Consolas, monospace; font-size: 0.88em; white-space: pre-wrap; }
+  .after  { background: #f0fff0 !important; font-family: Consolas, monospace; font-size: 0.88em; white-space: pre-wrap; }
+  .label-before { color: #b00; font-weight: bold; }
+  .label-after  { color: #060; font-weight: bold; }
+  .badge-done     { background: #28a745; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.82em; }
+  .badge-pending  { background: #6c757d; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.82em; }
+  .badge-next     { background: #0d6efd; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.82em; }
+  .file-path { font-family: Consolas, monospace; background: #eef0ff; padding: 3px 8px; border-radius: 3px; font-size: 0.9em; }
+  .reason { font-size: 0.9em; color: #555; margin-top: 4px; background: #fff8e1; border-left: 3px solid #ffc107; padding: 6px 12px; border-radius: 0 4px 4px 0; }
+  .section-intro { background: #fff; border-left: 4px solid #16213e; padding: 10px 16px; margin: 8px 0 18px 0; border-radius: 0 4px 4px 0; }
+  .toc a { color: #16213e; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc { background: #fff; border: 1px solid #c0c8ff; border-radius: 6px; padding: 16px 24px; display: inline-block; margin-bottom: 28px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 18px 0 30px 0; }
+  .summary-box { background: #fff; border-radius: 6px; border: 1px solid #c0c8ff; padding: 14px 18px; text-align: center; }
+  .summary-box .num { font-size: 2em; font-weight: bold; color: #1a1a2e; }
+  .summary-box .lbl { font-size: 0.85em; color: #555; margin-top: 4px; }
+  .roadmap-step { display: flex; align-items: flex-start; gap: 16px; margin: 10px 0; padding: 12px 16px; background: #fff; border-radius: 6px; border: 1px solid #c0c8ff; }
+  .step-num { background: #1a1a2e; color: #fff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+  .step-num.done { background: #28a745; }
+  .step-num.next { background: #0d6efd; }
+  .step-content .step-title { font-weight: bold; margin-bottom: 2px; }
+  .step-content .step-desc { font-size: 0.88em; color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Phase 2 – Java 21 / Spring Boot 3.x Migration: Change Summary</h1>
+<p class="meta">
+  <strong>Project:</strong> Hermes Onboarding Tool &nbsp;|&nbsp;
+  <strong>Date:</strong> 15 May 2026 &nbsp;|&nbsp;
+  <strong>Phase:</strong> 2 – Modernisation (Java 8 → Java 21, Spring Boot 3.x migration) &nbsp;|&nbsp;
+  <strong>Step:</strong> 1 of 7 – Java Version Upgrade
+</p>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol class="toc">
+    <li><a href="#roadmap">Full Migration Roadmap</a></li>
+    <li><a href="#summary">Summary Dashboard (Step 1)</a></li>
+    <li><a href="#java-version">pom.xml – Java Version Property</a></li>
+    <li><a href="#compiler-plugin">pom.xml – maven-compiler-plugin</a></li>
+    <li><a href="#eclipse-plugin">pom.xml – maven-eclipse-plugin Removed</a></li>
+    <li><a href="#exec-plugin">pom.xml – exec-maven-plugin</a></li>
+    <li><a href="#war-plugin">pom.xml – maven-war-plugin</a></li>
+    <li><a href="#employee-java">Employee.java – Illegal sun.* Import Removed</a></li>
+    <li><a href="#pending">Pending Steps 2–7</a></li>
+  </ol>
+</div>
+
+<!-- ROADMAP -->
+<h2 id="roadmap">1. Full Migration Roadmap</h2>
+<div class="section-intro">
+  The migration is split into 7 incremental steps so each can be individually compiled, tested and verified before proceeding.
+</div>
+
+<div class="roadmap-step">
+  <div class="step-num done">1</div>
+  <div class="step-content">
+    <div class="step-title">Java 8 → Java 21 &nbsp; <span class="badge-done">DONE</span></div>
+    <div class="step-desc">Update <code>java-version</code> property, <code>maven-compiler-plugin</code> to use <code>&lt;release&gt;21&lt;/release&gt;</code>, remove obsolete Maven plugins. Fix illegal <code>sun.*</code> imports in source files.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num next">2</div>
+  <div class="step-content">
+    <div class="step-title">Spring 4.3 → 5.3.x + Spring Security 4.2 → 5.8.x &nbsp; <span class="badge-next">NEXT</span></div>
+    <div class="step-desc">Spring 4.x does not support Java 9+ module system officially. Upgrade to Spring 5.3 (last Spring 5 LTS) and Spring Security 5.8 (last pre-Jakarta version). This is the last step before the jakarta namespace change.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num">3</div>
+  <div class="step-content">
+    <div class="step-title">Log4j 1.x → Logback / SLF4J &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-desc">Log4j 1.2.15 is End-of-Life (2015) and has known CVEs. Replace with Logback (Spring Boot default) and clean up <code>slf4j-log4j12</code> bridge.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num">4</div>
+  <div class="step-content">
+    <div class="step-title">Migrate to Spring Boot 3.x Parent POM &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-desc">Add <code>spring-boot-starter-parent 3.x</code>. Brings managed versions for Hibernate 6, HikariCP, Logback, Spring Security 6, etc. Removes need for dozens of individual version declarations.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num">5</div>
+  <div class="step-content">
+    <div class="step-title">javax.* → jakarta.* Namespace Rename &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-desc">Spring Boot 3 / Jakarta EE 9 renamed all <code>javax.persistence</code>, <code>javax.servlet</code>, <code>javax.mail</code> etc. to <code>jakarta.*</code>. All Java source files and XML configs need updating. Affects every model, controller, and config class.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num">6</div>
+  <div class="step-content">
+    <div class="step-title">C3P0 → HikariCP Connection Pool &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-desc">C3P0 is EOL and not actively maintained. HikariCP is the Spring Boot 3 default — significantly faster and simpler to configure.</div>
+  </div>
+</div>
+<div class="roadmap-step">
+  <div class="step-num">7</div>
+  <div class="step-content">
+    <div class="step-title">XML Configs → Java @Configuration (Optional) &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-desc">Convert <code>servlet-context.xml</code>, <code>spring-security.xml</code>, <code>root-context.xml</code> to Java-based <code>@Configuration</code> classes. IDE-friendly, type-safe, and standard for Spring Boot.</div>
+  </div>
+</div>
+
+<!-- SUMMARY DASHBOARD -->
+<h2 id="summary">2. Summary Dashboard – Step 1 (Completed)</h2>
+<div class="summary-grid">
+  <div class="summary-box"><div class="num">2</div><div class="lbl">Files Modified</div></div>
+  <div class="summary-box"><div class="num">6</div><div class="lbl">Individual Changes</div></div>
+  <div class="summary-box"><div class="num">1</div><div class="lbl">Plugin Removed</div></div>
+  <div class="summary-box"><div class="num">3</div><div class="lbl">Plugins Upgraded</div></div>
+</div>
+
+<table>
+  <tr><th>#</th><th>File</th><th>Change</th><th>Status</th></tr>
+  <tr>
+    <td>1</td>
+    <td class="file-path">pom.xml</td>
+    <td>Java version property: <code>1.8</code> → <code>21</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td class="file-path">pom.xml</td>
+    <td>maven-compiler-plugin: <code>2.5.1</code> → <code>3.13.0</code>; <code>&lt;source&gt;/&lt;target&gt;</code> → <code>&lt;release&gt;21&lt;/release&gt;</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td class="file-path">pom.xml</td>
+    <td>maven-eclipse-plugin <code>2.9</code> removed entirely — caused <code>ExceptionInInitializerError</code> on Java 21</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td class="file-path">pom.xml</td>
+    <td>exec-maven-plugin: <code>1.2.1</code> → <code>3.3.0</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td class="file-path">pom.xml</td>
+    <td>maven-war-plugin: <code>3.0.0</code> → <code>3.4.0</code>; added missing <code>&lt;groupId&gt;</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td class="file-path">model/Employee.java</td>
+    <td>Removed illegal <code>import sun.security.util.Password;</code> — unused import; blocked by Java 9+ module system</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+</table>
+
+<!-- CHANGE 1 -->
+<h2 id="java-version">3. pom.xml – Java Version Property</h2>
+<div class="section-intro">The <code>&lt;java-version&gt;</code> property controls the JDK target for compilation and is also referenced by other plugins.</div>
+<div class="reason">
+  <strong>Reason:</strong> The entire Phase 2 goal is to run on Java 21 LTS.
+  Java 21 brings virtual threads, modern GC, pattern matching, and long-term vendor support until 2031.
+  Changing the property alone is not enough — the compiler plugin also needs updating (see next change).
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;java-version&gt;1.8&lt;/java-version&gt;</td>
+    <td class="after">&lt;java-version&gt;21&lt;/java-version&gt;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 2 -->
+<h2 id="compiler-plugin">4. pom.xml – maven-compiler-plugin</h2>
+<div class="section-intro">This plugin controls how Maven compiles the Java source files. The old version (2.5.1, released 2012) was incompatible with Java 21.</div>
+<div class="reason">
+  <strong>Reason:</strong><br>
+  • <code>maven-compiler-plugin 2.5.1</code> uses <code>com.sun.tools.javac.*</code> internal APIs that are inaccessible on Java 9+.<br>
+  • The old <code>&lt;source&gt;/&lt;target&gt;</code> pair does not correctly enforce API compatibility — you could target 21 but still accidentally call APIs removed before 21.<br>
+  • <code>&lt;release&gt;21&lt;/release&gt;</code> is the correct modern replacement — it sets source, target, <em>and</em> the bootstrap classpath API check in one flag.<br>
+  • Version 3.13.0 is the latest stable release fully tested with Java 21.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+&lt;version&gt;2.5.1&lt;/version&gt;
+&lt;configuration&gt;
+    &lt;source&gt;1.8&lt;/source&gt;
+    &lt;target&gt;1.8&lt;/target&gt;
+    &lt;compilerArgument&gt;-Xlint:all&lt;/compilerArgument&gt;
+    &lt;showWarnings&gt;true&lt;/showWarnings&gt;
+    &lt;showDeprecation&gt;true&lt;/showDeprecation&gt;
+&lt;/configuration&gt;</td>
+    <td class="after">&lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+&lt;version&gt;3.13.0&lt;/version&gt;
+&lt;configuration&gt;
+    &lt;release&gt;21&lt;/release&gt;
+    &lt;compilerArgument&gt;-Xlint:all&lt;/compilerArgument&gt;
+    &lt;showWarnings&gt;true&lt;/showWarnings&gt;
+    &lt;showDeprecation&gt;true&lt;/showDeprecation&gt;
+&lt;/configuration&gt;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 3 -->
+<h2 id="eclipse-plugin">5. pom.xml – maven-eclipse-plugin Removed</h2>
+<div class="section-intro">This plugin was completely removed from the build.</div>
+<div class="reason">
+  <strong>Reason (two problems):</strong><br><br>
+  <strong>Problem 1 — Causes ExceptionInInitializerError on Java 21:</strong><br>
+  <code>maven-eclipse-plugin 2.9</code> (released 2012) uses <code>sun.reflect.*</code> and other private JDK internal APIs.
+  Java 9 introduced the module system which strictly blocks access to these APIs.
+  On Java 21, the plugin's static initializer crashes immediately with:<br>
+  <code>ExceptionInInitializerError [in thread "Worker-18: Building Project onboarding"]</code><br>
+  This makes Eclipse unable to process <code>pom.xml</code> at all, showing the error on line 1.<br><br>
+  <strong>Problem 2 — Plugin is completely obsolete:</strong><br>
+  <code>maven-eclipse-plugin</code> was used in Eclipse 2.x/3.x era (pre-2009) to generate <code>.classpath</code> and <code>.project</code> files.
+  Since Eclipse 3.5+, the <strong>m2e</strong> (Maven to Eclipse) integration handles this automatically.
+  Eclipse (and Spring Tool Suite) no longer needs or uses this plugin.
+  It has not been updated since 2012 and is officially retired.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;plugin&gt;
+    &lt;artifactId&gt;maven-eclipse-plugin&lt;/artifactId&gt;
+    &lt;version&gt;2.9&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;additionalProjectnatures&gt;...&lt;/additionalProjectnatures&gt;
+        &lt;additionalBuildcommands&gt;...&lt;/additionalBuildcommands&gt;
+        &lt;downloadSources&gt;true&lt;/downloadSources&gt;
+        &lt;downloadJavadocs&gt;true&lt;/downloadJavadocs&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</td>
+    <td class="after">/* REMOVED ENTIRELY */
+
+Eclipse handles .classpath and .project
+generation automatically via m2e.
+No replacement needed.</td>
+  </tr>
+</table>
+
+<!-- CHANGE 4 -->
+<h2 id="exec-plugin">6. pom.xml – exec-maven-plugin</h2>
+<div class="section-intro">Used to run the <code>Scheduler</code> main class via Maven. Upgraded to a Java 21 compatible version.</div>
+<div class="reason">
+  <strong>Reason:</strong> Version <code>1.2.1</code> (2012) uses deprecated internal Maven APIs removed in Maven 3.9+.
+  Version <code>3.3.0</code> supports Java 21 and Maven 3.9+.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
+&lt;version&gt;1.2.1&lt;/version&gt;</td>
+    <td class="after">&lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
+&lt;version&gt;3.3.0&lt;/version&gt;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 5 -->
+<h2 id="war-plugin">7. pom.xml – maven-war-plugin</h2>
+<div class="section-intro">Used to package the application as a WAR file for Tomcat deployment.</div>
+<div class="reason">
+  <strong>Reason:</strong> Version <code>3.0.0</code> (2016) does not correctly handle the Java 9+ module descriptor (<code>module-info.class</code>) and has a known conflict with Servlet 4.0+ APIs used in Tomcat 9/10.
+  Version <code>3.4.0</code> is the latest stable release supporting Java 21 and Tomcat 10.
+  The missing <code>&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;</code> was also added for correctness.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;!-- groupId missing --&gt;
+&lt;artifactId&gt;maven-war-plugin&lt;/artifactId&gt;
+&lt;version&gt;3.0.0&lt;/version&gt;</td>
+    <td class="after">&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+&lt;artifactId&gt;maven-war-plugin&lt;/artifactId&gt;
+&lt;version&gt;3.4.0&lt;/version&gt;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 6 -->
+<h2 id="employee-java">8. Employee.java – Illegal sun.* Import Removed</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/model/Employee.java — line 36</p>
+<div class="section-intro">
+  The error reported was:<br>
+  <code>The type sun.security.util.Password is not accessible — Employee.java, line 36</code>
+</div>
+<div class="reason">
+  <strong>Reason:</strong><br>
+  <code>sun.security.util.*</code> is a private internal JDK API — it was never meant for application code.
+  In Java 8, the JVM silently allowed access to these packages.
+  In Java 9+, the module system (Project Jigsaw) enforces strict encapsulation:
+  any access to <code>sun.*</code> or <code>com.sun.*</code> internal packages that are not explicitly exported causes a compile error.<br><br>
+  Investigation showed that <code>Password</code> was <strong>never used anywhere</strong> in <code>Employee.java</code> — it was a completely dead stale import, likely left over from copy-paste.
+  The fix is simply to remove the import line.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import sun.security.util.Password;  // ← illegal on Java 9+
+
+@NamedQueries(value = { ...</td>
+    <td class="after">import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+// sun.security.util.Password import removed —
+// never used; illegal under Java 9+ module system
+
+@NamedQueries(value = { ...</td>
+  </tr>
+</table>
+
+<!-- PENDING -->
+<h2 id="pending">9. Pending Steps (2–7)</h2>
+<div class="section-intro">
+  These are the remaining Phase 2 steps to be completed in order.
+  Each step depends on the previous one being stable and compiling cleanly.
+</div>
+<table>
+  <tr><th>Step</th><th>Work Item</th><th>Key Files Affected</th><th>Status</th></tr>
+  <tr>
+    <td>2</td>
+    <td>Spring Framework 4.3.30 → 5.3.x<br>Spring Security 4.2.13 → 5.8.x<br>Hibernate 5.2 → 5.6.x (pre-Jakarta)</td>
+    <td class="file-path">pom.xml</td>
+    <td><span class="badge-next">Next</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Log4j 1.2.15 → Logback 1.5.x<br>Remove slf4j-log4j12 bridge<br>Add logback.xml config</td>
+    <td class="file-path">pom.xml, log4j.properties → logback.xml</td>
+    <td><span class="badge-pending">Pending</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Add Spring Boot 3.x parent POM<br>Replace individual dep versions with BOM managed versions<br>Switch from WAR to embedded Tomcat (optional)</td>
+    <td class="file-path">pom.xml</td>
+    <td><span class="badge-pending">Pending</span></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>javax.* → jakarta.* rename<br>All JPA, Servlet, Mail, Inject annotations updated</td>
+    <td class="file-path">All model/*.java, controller/*.java, dao/*.java, web.xml, servlet-context.xml</td>
+    <td><span class="badge-pending">Pending</span></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>C3P0 → HikariCP<br>Update servlet-context.xml datasource bean configs</td>
+    <td class="file-path">pom.xml, servlet-context.xml</td>
+    <td><span class="badge-pending">Pending</span></td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>XML @Configuration migration (optional)<br>Convert Spring XML beans to Java @Configuration classes</td>
+    <td class="file-path">servlet-context.xml, spring-security.xml, root-context.xml</td>
+    <td><span class="badge-pending">Pending</span></td>
+  </tr>
+</table>
+
+<br><br>
+<p class="meta">Document generated: 15 May 2026 &nbsp;|&nbsp; Hermes Onboarding Tool – Phase 2 Migration (Step 1 of 7 complete)</p>
+</body>
+</html>

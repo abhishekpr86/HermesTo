@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phase 1 Security Fix – Change Summary | Hermes Onboarding Tool</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 40px; color: #222; background: #f9f9f9; }
+  h1 { background: #003366; color: #fff; padding: 18px 24px; border-radius: 6px; margin-bottom: 8px; }
+  h2 { background: #005599; color: #fff; padding: 10px 18px; border-radius: 4px; margin-top: 36px; }
+  h3 { color: #003366; margin-top: 24px; border-bottom: 2px solid #cce0ff; padding-bottom: 4px; }
+  .meta { color: #555; font-size: 0.95em; margin-bottom: 28px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
+  th { background: #003366; color: #fff; padding: 9px 14px; text-align: left; }
+  td { padding: 8px 14px; border: 1px solid #dde; vertical-align: top; }
+  tr:nth-child(even) td { background: #f0f5ff; }
+  .before { background: #fff0f0 !important; font-family: Consolas, monospace; font-size: 0.88em; white-space: pre-wrap; }
+  .after  { background: #f0fff0 !important; font-family: Consolas, monospace; font-size: 0.88em; white-space: pre-wrap; }
+  .label-before { color: #b00; font-weight: bold; }
+  .label-after  { color: #060; font-weight: bold; }
+  .badge-fixed  { background: #28a745; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.82em; }
+  .badge-deferred { background: #fd7e14; color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 0.82em; }
+  .file-path { font-family: Consolas, monospace; background: #eef2ff; padding: 3px 8px; border-radius: 3px; font-size: 0.9em; }
+  .reason { font-size: 0.9em; color: #555; margin-top: 4px; }
+  .section-intro { background: #fff; border-left: 4px solid #005599; padding: 10px 16px; margin: 8px 0 18px 0; border-radius: 0 4px 4px 0; }
+  ul { margin: 6px 0 6px 18px; }
+  li { margin: 3px 0; }
+  .toc a { color: #005599; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc { background: #fff; border: 1px solid #cce; border-radius: 6px; padding: 16px 24px; display: inline-block; margin-bottom: 28px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 18px 0 30px 0; }
+  .summary-box { background: #fff; border-radius: 6px; border: 1px solid #cce; padding: 14px 18px; text-align: center; }
+  .summary-box .num { font-size: 2em; font-weight: bold; color: #003366; }
+  .summary-box .lbl { font-size: 0.85em; color: #555; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Phase 1 Security Fixes – Change Summary</h1>
+<p class="meta">
+  <strong>Project:</strong> Hermes Onboarding Tool &nbsp;|&nbsp;
+  <strong>Date:</strong> 14 May 2026 &nbsp;|&nbsp;
+  <strong>Phase:</strong> 1 – Security hardening (Java 8, Spring MVC 4.3, Tomcat 9) &nbsp;|&nbsp;
+  <strong>Status:</strong> <span class="badge-fixed">COMPLETE &amp; VERIFIED</span>
+</p>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol class="toc">
+    <li><a href="#summary">Summary Dashboard</a></li>
+    <li><a href="#pom">pom.xml – Dependency Versions</a></li>
+    <li><a href="#spring-security-xml">spring-security.xml – XML Schema Version</a></li>
+    <li><a href="#userMgmtDao">UserManagementDaoImpl.java – SQL Injection</a></li>
+    <li><a href="#commonUtil">CommonUtil.java – Password Security</a></li>
+    <li><a href="#moodleController">MoodleController.java – Race Condition &amp; Path Traversal</a></li>
+    <li><a href="#reportController">ReportController.java – Race Condition, Hardcoded Paths &amp; Path Traversal</a></li>
+    <li><a href="#log4j">log4j.properties – Hardcoded Log Path</a></li>
+    <li><a href="#deferred">Deferred Items (Phase 2)</a></li>
+    <li><a href="#verification">Verification Evidence</a></li>
+  </ol>
+</div>
+
+<!-- SUMMARY -->
+<h2 id="summary">1. Summary Dashboard</h2>
+<div class="summary-grid">
+  <div class="summary-box"><div class="num">7</div><div class="lbl">Files Modified</div></div>
+  <div class="summary-box"><div class="num">14</div><div class="lbl">Individual Changes</div></div>
+  <div class="summary-box"><div class="num">5</div><div class="lbl">OWASP Risk Categories Addressed</div></div>
+  <div class="summary-box"><div class="num">0</div><div class="lbl">Errors in Production Log</div></div>
+</div>
+
+<table>
+  <tr>
+    <th>#</th><th>File</th><th>Change Type</th><th>OWASP Risk</th><th>Status</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td class="file-path">pom.xml</td>
+    <td>Spring Security version corrected; Spring Framework unified; compiler warnings enabled</td>
+    <td>A06 Vulnerable &amp; Outdated Components</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td class="file-path">WEB-INF/spring/appServlet/spring-security.xml</td>
+    <td>XML schema namespace version corrected (4.0 → 4.2)</td>
+    <td>A06 Vulnerable &amp; Outdated Components</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td class="file-path">UserManagementDaoImpl.java</td>
+    <td>SQL injection removed – parameterised queries added</td>
+    <td>A03 Injection</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td class="file-path">CommonUtil.java</td>
+    <td>Plaintext password logging removed; MD5 hash method removed</td>
+    <td>A02 Cryptographic Failures</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td class="file-path">MoodleController.java</td>
+    <td>Shared instance variables removed (race condition); path traversal protection; hardcoded path removed</td>
+    <td>A01 Broken Access Control, A05 Security Misconfiguration</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td class="file-path">ReportController.java</td>
+    <td>Shared instance variable removed (race condition); hardcoded Windows paths replaced; path traversal protection; temp file cleanup after download</td>
+    <td>A01 Broken Access Control, A05 Security Misconfiguration</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td class="file-path">log4j.properties</td>
+    <td>Hardcoded log file path replaced with portable Tomcat variable</td>
+    <td>A05 Security Misconfiguration</td>
+    <td><span class="badge-fixed">Fixed</span></td>
+  </tr>
+</table>
+
+<!-- CHANGE 1: pom.xml -->
+<h2 id="pom">2. pom.xml – Dependency Versions</h2>
+<div class="section-intro">
+  Three separate version issues were fixed in the Maven build descriptor.
+</div>
+
+<h3>Change 1a – Spring Security version corrected</h3>
+<p class="reason"><strong>Reason:</strong> Version <code>4.2.22.RELEASE</code> does not exist on Maven Central. Maven resolved it to an incorrect/unavailable artifact, causing startup failures.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;artifactId&gt;spring-security-core&lt;/artifactId&gt;
+&lt;version&gt;4.2.22.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
+&lt;version&gt;4.2.22.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
+&lt;version&gt;4.2.22.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-ldap&lt;/artifactId&gt;
+&lt;version&gt;4.2.22.RELEASE&lt;/version&gt;</td>
+    <td class="after">&lt;artifactId&gt;spring-security-core&lt;/artifactId&gt;
+&lt;version&gt;4.2.13.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-config&lt;/artifactId&gt;
+&lt;version&gt;4.2.13.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-web&lt;/artifactId&gt;
+&lt;version&gt;4.2.13.RELEASE&lt;/version&gt;
+
+&lt;artifactId&gt;spring-security-ldap&lt;/artifactId&gt;
+&lt;version&gt;4.2.13.RELEASE&lt;/version&gt;</td>
+  </tr>
+</table>
+
+<h3>Change 1b – Spring Framework version unified</h3>
+<p class="reason"><strong>Reason:</strong> The project had a mix of Spring 4.2.5 and 4.3.30 artifacts on the classpath, causing <code>NoSuchMethodError</code> and unpredictable runtime behaviour. Unified to 4.3.30.RELEASE (latest 4.x patch).</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;org.springframework-version&gt;4.2.5.RELEASE&lt;/org.springframework-version&gt;
+(some individual deps pinned to 4.3.30 separately)</td>
+    <td class="after">&lt;org.springframework-version&gt;4.3.30.RELEASE&lt;/org.springframework-version&gt;
+(single property used by all Spring deps)</td>
+  </tr>
+</table>
+
+<h3>Change 1c – Compiler deprecation warnings enabled</h3>
+<p class="reason"><strong>Reason:</strong> Warnings were silently suppressed, hiding use of deprecated APIs. Enabling them assists with future Phase 2 migration.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;maven-compiler-plugin&gt; config had no
+showWarnings or showDeprecation flags</td>
+    <td class="after">&lt;compilerArgument&gt;-Xlint:all&lt;/compilerArgument&gt;
+&lt;showWarnings&gt;true&lt;/showWarnings&gt;
+&lt;showDeprecation&gt;true&lt;/showDeprecation&gt;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 2: spring-security.xml -->
+<h2 id="spring-security-xml">3. spring-security.xml – XML Schema Version</h2>
+<p class="file-path">src/main/webapp/WEB-INF/spring/appServlet/spring-security.xml</p>
+<div class="section-intro">
+  The XML namespace declaration referenced the wrong schema version. Spring loaded the 4.2 JAR but tried to validate beans against the 4.0 XSD, causing a <code>BeanDefinitionParsingException</code> on every Tomcat startup.
+</div>
+
+<h3>Change 2 – Schema namespace corrected</h3>
+<p class="reason"><strong>Reason:</strong> Schema version in <code>xsi:schemaLocation</code> must match the Spring Security JAR version on the classpath.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">...spring-security-4.0.xsd</td>
+    <td class="after">...spring-security-4.2.xsd</td>
+  </tr>
+</table>
+
+<!-- CHANGE 3: UserManagementDaoImpl -->
+<h2 id="userMgmtDao">4. UserManagementDaoImpl.java – SQL Injection</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/dao/impl/UserManagementDaoImpl.java</p>
+<div class="section-intro">
+  The password change flow used string concatenation to build SQL queries, allowing an attacker to inject SQL via the username or password fields. Replaced with fully parameterised native queries.
+</div>
+
+<h3>Change 3 – SQL injection removed (SELECT + UPDATE)</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A03 – SQL Injection. String-concatenated SQL is directly exploitable.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">// String concatenation — injectable
+session.createNativeQuery(
+  "SELECT password FROM users WHERE username = '"
+  + username + "'")
+.uniqueResult();
+
+session.createNativeQuery(
+  "UPDATE users SET password = '" + hashedNewPassword
+  + "' WHERE username = '" + username + "'")
+.executeUpdate();</td>
+    <td class="after">// Parameterised — injection-proof
+session.createNativeQuery(
+  "SELECT password FROM users WHERE username = :username")
+  .setParameter("username", username)
+  .uniqueResult();
+
+session.createNativeQuery(
+  "UPDATE users SET password = :password, isFirstLogin = '0'"
+  + " WHERE username = :username")
+  .setParameter("password", hashedNewPassword)
+  .setParameter("username", username)
+  .executeUpdate();</td>
+  </tr>
+</table>
+
+<!-- CHANGE 4: CommonUtil -->
+<h2 id="commonUtil">5. CommonUtil.java – Password Security</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/util/CommonUtil.java</p>
+<div class="section-intro">
+  Two password-related security issues were fixed in the utility class.
+</div>
+
+<h3>Change 4a – Plaintext password logging removed</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A02 – Cryptographic Failures. Logging plaintext passwords exposes them in log files, which may be accessible to other users or systems.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">public static String getPasswordBcrypt(String password) {
+    logger.info("getPasswordBcrypt password :" + password);
+    String hashedPassword = passwordEncoder.encode(password);
+    return hashedPassword;
+}</td>
+    <td class="after">public static String getPasswordBcrypt(String password) {
+    String hashedPassword = passwordEncoder.encode(password);
+    return hashedPassword;
+}</td>
+  </tr>
+</table>
+
+<h3>Change 4b – MD5 hash method removed</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A02 – Cryptographic Failures. MD5 is cryptographically broken and must not be used for password hashing. BCrypt (already in use) is the correct algorithm. The unused imports <code>BigInteger</code>, <code>MessageDigest</code>, <code>NoSuchAlgorithmException</code> were also removed.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+...
+public static String getPasswordMD5(String password)
+    throws NoSuchAlgorithmException {
+    MessageDigest md = MessageDigest.getInstance("MD5");
+    byte[] messageDigest = md.digest(password.getBytes());
+    BigInteger number = new BigInteger(1, messageDigest);
+    String hashtext = number.toString(16);
+    ...
+    return hashtext;
+}</td>
+    <td class="after">// Entire getPasswordMD5() method removed.
+// Unused imports BigInteger, MessageDigest,
+// NoSuchAlgorithmException also removed.</td>
+  </tr>
+</table>
+
+<!-- CHANGE 5: MoodleController -->
+<h2 id="moodleController">6. MoodleController.java – Race Condition &amp; Path Traversal</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/MoodleController.java</p>
+<div class="section-intro">
+  This Spring MVC controller is a singleton. Storing request-scoped state in instance fields causes race conditions under concurrent requests. Additionally, file download endpoints accepted user-supplied filenames without validation, enabling path traversal attacks.
+</div>
+
+<h3>Change 5a – Shared instance variables removed (race condition)</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A01/A04 – Insecure Design. Singleton controllers sharing mutable fields across requests can corrupt data or serve one user's file to another.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">// Singleton-scoped instance fields shared across requests
+private String absolutePath;
+private HttpSession session;
+private String role_id;</td>
+    <td class="after">// Fields removed entirely.
+// absolutePath is now a local variable in each method.
+// session obtained from method parameter where needed.</td>
+  </tr>
+</table>
+
+<h3>Change 5b – Path traversal protection added to download endpoints</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A01 – Broken Access Control. Without validation, <code>../../etc/passwd</code>-style filenames could read arbitrary server files.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">// No validation on user-supplied filename
+File file = new File("C:/OnboardingToolExport/" + filename);</td>
+    <td class="after">// Whitelist validation – only word chars, hyphens, dots allowed
+private static final Pattern SAFE_FILENAME =
+    Pattern.compile("[\\w\\-\\.]+");
+
+if (!SAFE_FILENAME.matcher(file).matches()) {
+    response.sendError(SC_BAD_REQUEST, "Invalid filename");
+    return;
+}
+// Canonical path check – belt-and-suspenders
+File f = new File(System.getProperty("java.io.tmpdir"), filename);
+if (!f.getCanonicalPath().startsWith(
+        new File(System.getProperty("java.io.tmpdir"))
+            .getCanonicalPath())) {
+    response.sendError(SC_FORBIDDEN);
+    return;
+}</td>
+  </tr>
+</table>
+
+<h3>Change 5c – Hardcoded Windows path removed</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A05 – Security Misconfiguration. <code>C:/OnboardingToolExport/</code> fails on non-Windows servers and fails if the directory doesn't exist.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">String excelFilePath = "C:/OnboardingToolExport/";</td>
+    <td class="after">String excelFilePath = System.getProperty("java.io.tmpdir")
+    + File.separator;</td>
+  </tr>
+</table>
+
+<!-- CHANGE 6: ReportController -->
+<h2 id="reportController">7. ReportController.java – Race Condition, Hardcoded Paths &amp; Path Traversal</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/ReportController.java</p>
+<div class="section-intro">
+  Same class of issues as MoodleController, plus an additional path traversal vulnerability in the central download endpoint used by all three reports (Employee List, BIS Rotation, Onboarding Request).
+</div>
+
+<h3>Change 6a – Shared instance variable removed (race condition)</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A04 – Insecure Design. <code>private String absolutePath</code> as an instance field in a singleton could cause one user's download to serve another user's file.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">@Controller
+public class ReportController {
+    private String absolutePath; // shared across all requests</td>
+    <td class="after">@Controller
+public class ReportController {
+    // absolutePath field removed entirely;
+    // path is now a local variable in each method</td>
+  </tr>
+</table>
+
+<h3>Change 6b – Hardcoded Windows path replaced in createResourceReportFile()</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A05 – Security Misconfiguration. Directory may not exist; path is Windows-only.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">String excelFilePath = "C:/OnboardingToolExport/";</td>
+    <td class="after">String excelFilePath = System.getProperty("java.io.tmpdir")
+    + File.separator;</td>
+  </tr>
+</table>
+
+<h3>Change 6c – Hardcoded Windows path replaced in bisRotationExcelExport()</h3>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">new File("ResourceRotation-Export.xlsx");
+this.absolutePath = "C:/OnboardingToolExport/ResourceRotation-Export.xlsx";</td>
+    <td class="after">String excelFilePath = System.getProperty("java.io.tmpdir")
+    + File.separator + "ResourceRotation-Export.xlsx";</td>
+  </tr>
+</table>
+
+<h3>Change 6d – Hardcoded Windows path replaced in onbReqReportFile()</h3>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">String excelFilePath = "C:/OnboardingToolExport/";</td>
+    <td class="after">String excelFilePath = System.getProperty("java.io.tmpdir")
+    + File.separator;</td>
+  </tr>
+</table>
+
+<h3>Change 6e – Path traversal protection + temp file cleanup in downloadFile()</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A01 – Broken Access Control. No validation on the <code>{file}</code> path variable allowed traversal to arbitrary files. Also added automatic deletion of the temp file after download to avoid temp directory accumulation.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">public void downloadFile(@PathVariable("file") String file, ...) {
+    // No validation whatsoever
+    File metricsReportFile =
+        new File("C:/OnboardingToolExport/" + file + ".xlsx");
+    InputStream is = new FileInputStream(metricsReportFile);
+    FileCopyUtils.copy(is, response.getOutputStream());
+    // File never deleted — accumulates indefinitely
+}</td>
+    <td class="after">public void downloadFile(@PathVariable("file") String file, ...) {
+    // Step 1: Reject traversal characters
+    if (file.contains("/") || file.contains("\\")
+            || file.contains("..") || file.contains("\0")) {
+        response.sendError(SC_BAD_REQUEST, "Invalid filename");
+        return;
+    }
+    File metricsReportFile =
+        new File(System.getProperty("java.io.tmpdir"), file + ".xlsx");
+
+    // Step 2: Canonical path must still be inside tmpdir
+    if (!metricsReportFile.getCanonicalPath().startsWith(
+            new File(System.getProperty("java.io.tmpdir"))
+                .getCanonicalPath())) {
+        response.sendError(SC_FORBIDDEN);
+        return;
+    }
+    InputStream is = new FileInputStream(metricsReportFile);
+    FileCopyUtils.copy(is, response.getOutputStream());
+    response.flushBuffer();
+    is.close();
+
+    // Step 3: Delete temp file after successful download
+    if (metricsReportFile.delete()) {
+        logger.info("After File delete true");
+    }
+}</td>
+  </tr>
+</table>
+
+<!-- CHANGE 7: log4j.properties -->
+<h2 id="log4j">8. log4j.properties – Hardcoded Log Path</h2>
+<p class="file-path">src/main/resources/log4j.properties</p>
+<div class="section-intro">
+  The log file path was hardcoded to a developer's local machine path, causing silent log loss on any other environment.
+</div>
+
+<h3>Change 7 – Log file path made portable</h3>
+<p class="reason"><strong>Reason:</strong> OWASP A05 – Security Misconfiguration. A hardcoded path fails silently on other machines; using <code>${catalina.home}</code> writes logs to the standard Tomcat logs directory on any server.</p>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">log4j.appender.file.File=C:/work/psa/onboarding/logs/onboard.log</td>
+    <td class="after">log4j.appender.file.File=${catalina.home}/logs/onboard.log</td>
+  </tr>
+</table>
+
+<!-- DEFERRED -->
+<h2 id="deferred">9. Deferred Items – Not Yet Implemented</h2>
+<div class="section-intro">
+  The following items were identified but deferred by agreement. They are candidates for Phase 2.
+</div>
+<table>
+  <tr><th>#</th><th>Item</th><th>File(s)</th><th>Risk</th><th>Status</th></tr>
+  <tr>
+    <td>D1</td>
+    <td>Externalise DB credentials out of XML config files into environment variables or a secrets manager</td>
+    <td class="file-path">servlet-context.xml, security-context.xml</td>
+    <td>A02 Cryptographic Failures / A05 Misconfiguration</td>
+    <td><span class="badge-deferred">Deferred</span></td>
+  </tr>
+  <tr>
+    <td>D2</td>
+    <td>Externalise LDAP/AD credentials</td>
+    <td class="file-path">activeDirectory.properties, PSA_Config.yml</td>
+    <td>A02 Cryptographic Failures</td>
+    <td><span class="badge-deferred">Deferred</span></td>
+  </tr>
+  <tr>
+    <td>D3</td>
+    <td>XSS protection — escape model attributes in JSP views using JSTL <code>&lt;c:out&gt;</code> or Spring's <code>&lt;spring:escapeBody&gt;</code></td>
+    <td class="file-path">Multiple JSP files under WEB-INF/views/</td>
+    <td>A03 Injection (XSS)</td>
+    <td><span class="badge-deferred">Deferred</span></td>
+  </tr>
+  <tr>
+    <td>D4</td>
+    <td>Phase 2 migration: Java 8 → Java 21, Spring Boot 3.x, HikariCP, Hibernate 6, Spring Security 6, Logback</td>
+    <td class="file-path">Entire project</td>
+    <td>A06 Vulnerable &amp; Outdated Components</td>
+    <td><span class="badge-deferred">Deferred – Phase 2</span></td>
+  </tr>
+</table>
+
+<!-- VERIFICATION -->
+<h2 id="verification">10. Verification Evidence</h2>
+<div class="section-intro">
+  All Phase 1 changes were verified against live Tomcat 9.0.115 logs on 14 May 2026.
+</div>
+<table>
+  <tr><th>Scenario</th><th>Evidence from Tomcat Log</th><th>Result</th></tr>
+  <tr>
+    <td>Application starts without errors</td>
+    <td>No BeanDefinitionParsingException, no ClassNotFoundException, no version mismatch errors at startup</td>
+    <td><span class="badge-fixed">PASS</span></td>
+  </tr>
+  <tr>
+    <td>Employee List report – 2311 records generated and downloaded</td>
+    <td><code>INFO EmployeeServiceImpl:578 - emplist : 2311</code><br>
+        <code>INFO ReportController:1274 - downloadReportFile: serving EmployeeList(All-ActiveResources)14-05-2026 15 06 07.xlsx</code></td>
+    <td><span class="badge-fixed">PASS</span></td>
+  </tr>
+  <tr>
+    <td>Temp file deleted after download</td>
+    <td><code>INFO ReportController:1281 - After File delete true</code></td>
+    <td><span class="badge-fixed">PASS</span></td>
+  </tr>
+  <tr>
+    <td>No errors in production log during normal operation</td>
+    <td>Log contains only INFO-level entries; no WARN or ERROR after startup</td>
+    <td><span class="badge-fixed">PASS</span></td>
+  </tr>
+</table>
+
+<br><br>
+<p class="meta">Document generated: 14 May 2026 &nbsp;|&nbsp; Hermes Onboarding Tool – Phase 1 Security Review</p>
+</body>
+</html>

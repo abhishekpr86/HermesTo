@@ -1,0 +1,16 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.capgemini.onboarding.model.Vendor;
+
+@Service
+public interface VendorService {
+	
+	public List<Vendor> listVendor(int countryId);
+
+	public Vendor getVendorById(int id);
+	
+}

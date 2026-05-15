@@ -1,0 +1,52 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.Collections;
+
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.capgemini.onboarding.model.Country;
+import com.capgemini.onboarding.model.EmployeeRoles;
+import com.capgemini.onboarding.model.RoleTech;
+
+@Repository
+public class EmployeeRoleDaoImpl implements EmployeeRoleDao{
+
+	private static final Logger logger = LoggerFactory.getLogger(CountryDaoImpl.class);
+
+	@Autowired
+	private SessionFactory sessionFactory;
+	@Override
+	public List<EmployeeRoles> listEmployeeRoles() {
+		Session session = this.sessionFactory.getCurrentSession();
+		List<EmployeeRoles> EmployeeRolesList = session.createQuery("from EmployeeRoles").list();
+		for(EmployeeRoles EmployeeRoles : EmployeeRolesList){
+			logger.info("roles List::"+EmployeeRoles);
+		}
+		Collections.sort(EmployeeRolesList);
+		return EmployeeRolesList;	
+	}
+	
+	@Override
+	public EmployeeRoles getEmployeeRolesId(int id) {
+		Session session = this.sessionFactory.getCurrentSession();
+		//session.beginTransaction();
+		Criteria criteria = session.createCriteria(EmployeeRoles.class);
+		criteria.add(Restrictions.eq("ref_id", id));
+		EmployeeRoles EmployeeRoles = (EmployeeRoles) criteria.uniqueResult();
+		//logger.info("IndusGoals loaded successfully, IndusGoals details=" + indusGoals);
+				
+		return EmployeeRoles;
+	}
+
+	
+	
+}

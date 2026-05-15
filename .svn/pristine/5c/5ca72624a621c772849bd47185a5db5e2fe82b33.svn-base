@@ -1,0 +1,1598 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<%@ page session="true"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resource OnBoarding Tool - Add Resource</title>
+<link rel="stylesheet" type="text/css"
+	href="${pageContext.request.contextPath}/resources/css/datatables.min.css" />
+
+<link type="text/css" rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/common.css" />
+<link type="text/css" rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/theme.css" />
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" 
+	href="${pageContext.request.contextPath}/resources/css/dialog.css">
+
+<style type="text/css">
+    .bs-example{
+    	margin: 20px;
+    }
+</style>
+</head>
+<body>
+ <header class="main-header">
+		<div class="pull-left">
+			<h1 class="pull-left">Resource On-boarding Tool</h1>
+		</div>
+
+		<nav class="pull-right">
+			<ul class="nav-new">
+
+
+				<li><a href="${pageContext.request.contextPath}/dashboard" title="DashBoard">DashBoard</a></li>
+				
+				<c:if test="${checkUserTypeforUM ne null}">
+					<li class="reports"><a title="User Management">User Management</a>
+					<ul class="reportsSubMenu">
+						 <li><a href="${pageContext.request.contextPath}/userManagement" title="userManagement">Add User</a></li>
+						<li><a href="${pageContext.request.contextPath}/userSearch" title="userSearch">Edit User</a></li>
+					</ul></li>
+				</c:if>
+				
+				<li class="active"><a href="javascript:void(0);"
+					title="Resource Pre-Onboarding">Resource Pre-Onboarding</a></li>
+				
+				<c:if test="${(checkUserType eq 'BundleEM') or (checkUserType eq 'RM') or (checkUserTypeforUM ne null)}">
+				<li><a href="${pageContext.request.contextPath}/preOnboardingSearch" title="Edit Pre-Onboarding">View/Edit Pre-Onboarding</a></li>
+				</c:if>
+
+				<c:if test="${(checkUserType eq 'ViewMode') or (checkUserType eq 'RM')}">
+					<li><a href="${pageContext.request.contextPath}/allResourceList" title="View List">View Resources</a></li>
+				</c:if>
+
+				<c:if test="${(checkUserTypeforUM ne null) or (checkUserType eq 'RM_PMO')}">
+					<li><a href="${pageContext.request.contextPath}/allResourceList" title="Edit List">View / Edit Resources</a></li>
+				</c:if>
+				<c:if test="${checkUserType eq 'ViewMode'}">
+					<li><a href="${pageContext.request.contextPath}/allResourceList" title="View List">View Resources</a></li>
+				</c:if>
+			
+				<c:if test="${checkUserTypeforUM ne null}">
+					<li><a href="${pageContext.request.contextPath}/employeeSearch" title="Resource Off-boarding">Resource Off-boarding</a></li>
+				</c:if>		
+					
+					
+			<c:if test="${checkUserType ne 'BundleEM'}">	
+				<li class="reports"><a title="Reports">Reports</a>
+					<ul style="width:250px" class="reportsSubMenu">
+						<li><a href="${pageContext.request.contextPath}/report" title="Report">Resource
+								Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/reportOffBoarding"
+							title="Off Boarding Report">Off Boarding Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/hc&fteReport" 
+							title="HC&FTEReport">FTE Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/dataInconsistencies" 
+							title="dataInconsistencies">Data Inconsistencies Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/orphanMgr" title="Orphan Manager">Orphan Manager Report</a></li>
+						<li><a href="${pageContext.request.contextPath}/replacementEmployees" title="Replacement Employees">Replacement Employees Report</a></li>
+						
+					</ul></li>
+			</c:if>
+				<li><a href="${pageContext.request.contextPath}/main" title="Change Password">Change
+						Password</a></li>
+				<li><a href="${pageContext.request.contextPath}/logout" title="Logout">Logout</a></li>
+
+			</ul>
+		</nav>
+
+	</header>
+	<section class="main-content">
+		<br />
+		<h2>Pre-Onboard Resource</h2>
+		<div class="formFields clearfix">
+			<div class="reqText">* indicates required fields</div>
+			<c:url var="addAction" value="/addPreOnboardRec/add"></c:url>
+			<c:url var="findCountryStateURL" value="/PreOnbStates" />
+			<c:url var="findBIS" value="/PreOnbBis" />
+			<c:url var="findBundleEMfromBIS" value="/findBundleEMfromBIS"/>
+			<c:url var="checkPreOnBEmployeeExists" value="/checkPreOnBEmployeeExists" />
+			<c:url var="checkPlannedEndDate" value="/checkPlannedEndDate" />
+			<c:url var="checkBillingDate" value="/checkBillingDate" />
+			<c:url var="newCountryStateMailRequest" value="/newCountryStateMailRequest" />
+			<c:url var="checkCorpIdExists" value="/checkCorpIdExistsInPreOnb" />
+			<%-- <c:url var="checkPsaIdExists" value="/checkPsaIdExists" /> --%>
+			<c:url var="checkEmployeeEmailExists" value="/checkPreObEmployeeEmailExists" />
+			<c:url var="getDetailsByCorpIDFromActiveDirectory" value="/getDetailsByCorpIDFromActiveDirectoryPreOnb" />
+			
+			
+			<c:if test="${errorMsg ne null}">
+				<div class="errorBox">
+					<h3>${errorMsg}</h3>
+				</div>
+			</c:if>
+			<c:if test="${successMsg ne null}">
+				<div class="successMsg">
+					<h3>${successMsg}</h3>
+				</div>
+			</c:if>
+
+			<form:form action="${addAction}" commandName="preonbemployee" method="POST" id="addemployee">
+				<div class="formRow">
+					<div>
+						<form:hidden id="id" path="id" />	
+						<form:hidden id="resourceStatus" path="resourceStatus" />
+						<form:hidden id="EMSubmitDT"  path="EMSubmitDTString" />
+						<form:hidden id="creationdate" path="creationdateString"/>
+						<form:hidden id="isVLANmailDone" path="isVLANmailDone"/>
+						<%-- <form:hidden id="RMSubmitDT" path="RMSubmitDT"/>  --%>
+					</div>
+					<div class="col50per" id="divCorpId" style="display: block;">
+						<div class="fieldLbl">
+							<label id="corpID">CORP ID <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="corpId" id="txtCorpID" class="input-control"
+								data-validation="required" />
+						</div>
+					</div>
+				
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label> Resource Type : </label>
+						</div>
+						<form:radiobutton path="empType" id="rdIntEmpCheck"
+							value="Internal" name="rdoGroup" class="input-control"
+							checked="checked" />
+						<label>Internal</label>
+						<form:radiobutton path="empType" value="External"
+							id="rdExtEmpCheck" name="rdoGroup" class="input-control" />
+						<label>External</label>
+						
+						<form:hidden id="id" path="id" />
+					</div>
+					
+					
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div>
+							<form:hidden id="userReadOnly" path="userReadOnly" />
+							<div class="fieldLbl">
+								<label id="commonID">Emp ID :<span class='req'>*</span>
+								</label>
+							</div>
+							<div class="inputField">
+								<form:input path="empId" size="20" id="txtCommonID"
+									class="input-control" />
+								
+							</div>
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div>
+							<form:hidden id="userReadOnly" path="userReadOnly" />
+							<div class="fieldLbl">
+								<label id="ggID">GG ID :<span class='req'>*</span>
+								</label>
+							</div>
+							<div class="inputField">
+								<form:input path="ggId" size="8" id="txtggID"
+									class="input-control" data-validation="required"/>
+								
+							</div>
+						</div>
+					</div>
+					
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>First Name <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="firstName" id="txtFirstName"
+								class="input-control" data-validation="required" />
+						</div>
+					</div>
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Last Name <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="lastName" id="txtLastName"
+								class="input-control" data-validation="required" />
+						</div>
+					</div>
+				</div>
+				
+				<div class="formRow">
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Email <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="email" id="txtEmail" class="input-control"
+								data-validation="email" />
+						</div>
+					</div>
+					
+					
+					<div class="col50per" id="divGlobalGrade" style="display: block;">
+						<div class="fieldLbl">
+							<label id="GlobalGrade">Global Grade <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="globalGrade" id="drpGlobalGrade"
+								class="select-control" data-validation="required"  style="width: 168px;">
+								<c:forEach items="${listGlobalGrades}" var="globalGrades">
+									<form:option value="${globalGrades.globalGradeId}">${globalGrades.name}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					
+					
+					
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Country <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="country" id="drpCountry"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								
+								<c:forEach items="${listCountry}" var="cntry">
+									<form:option value="${cntry.countryId}">${cntry.countryName}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Location <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="location" id="drpLocation"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listState}" var="state">
+								  
+									<form:option value="${state.stateId}">${state.stateName}</form:option>
+								 </c:forEach> 
+							</form:select>
+						</div>
+					</div>
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Capgemini Entity :</label>
+						</div>
+						<div class="inputField">
+							<form:input path="cgEntity" id="drpCapEntity" class="input-control" />
+						</div>
+					</div>
+				</div>
+				
+				<div class="formRow">
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Manager/Supervisor <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="manager" id="drpSupervisor"
+								class="select-control" data-validation="required">
+								<option value="" selected="true">-Select-</option>
+								<c:forEach items="${listEmployees}" var="mgr">
+									<c:set var="listEmployees" value="${listEmployees}" />
+									
+									<c:if test="${!empty mgr.email}">
+										<c:if test="${!empty mgr.corpId}">
+											<form:option info="${mgr.email}" value="${mgr.id}">${mgr.lastName} ${mgr.firstName}  ( ${mgr.corpId} )</form:option>
+										</c:if>
+										<c:if test="${empty mgr.corpId}">
+										<form:option info="${mgr.email}" value="${mgr.id}">${mgr.lastName} ${mgr.firstName}</form:option>
+									</c:if>
+									</c:if>
+									
+									
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Manager Email <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="managerEmail" id="mgrEmail"
+								class="input-readonly" data-validation="required" />
+						</div>
+					</div>
+					
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Primary Program <span class="req">*</span>: </label>
+						</div>
+						<div class="inputField">
+							<form:select path="primaryprogram" id="drpprimprogram"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listPrimaryProgram}" var="primprogram">
+									<form:option value="${primprogram.primaryProgramId}">${primprogram.primaryProgramName}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Project <span class="req">*</span>: </label>
+						</div>
+						<div class="inputField">
+							<form:select path="projectCode" id="drpproject"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listProjects}" var="project">
+									<c:set var="listProjects" value="${listProjects}" />
+										
+											<form:option info="${project.projectName}" value="${project.projectId}">${project.projectName} ( ${project.projectId} )</form:option>
+										
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+				</div>
+				
+					<div class="formRow">
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Role<span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="emprole" id="drpemprole"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listEmployeeRoles}" var="emproles">
+								<form:option value="${emproles.ref_id}">${emproles.ref_name}</form:option>
+
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					
+					 <div class="col50per">
+						<div class="fieldLbl">
+							<label>Technical / Development <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="type" id="drpTechDev"
+								class="select-control" data-validation="required">
+								<option value="" selected="true">-Select-</option>
+								<option value="1">Industrialisator</option>
+								<option value="2">Developer</option>
+								<option value="3">Transversal</option>
+								<option value="4">High Cycle</option>
+							</form:select>
+						</div>
+					</div> 
+					</div> 
+					
+					
+					<div class="formRow">
+					
+					<div class="col50per" id="divGrade" style="display: none;">
+						<div class="fieldLbl">
+							<label>Local Grade <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="grade" id="drpGrade" class="select-control"
+								data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listGrades}" var="grd">
+									<form:option info="${grd.globalGradeId}" value="${grd.gradeId}">${grd.name}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div> 
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Sex <span class="req">*</span>:
+							</label>
+						</div>
+						<%-- <form:radiobutton path="empSex" id="rdEmpSex" value="M"
+							name="rdoGroup" class="input-control" checked="checked" />
+						<label>Male</label>
+						<form:radiobutton path="empSex" value="F" id="rdEmpSex"
+							name="rdoGroup" class="input-control" />
+						<label>Female</label> --%>
+						<div class="inputField">
+							<form:select path="empSex" id="rdEmpSex"
+								class="select-control" data-validation="required">
+								<option value="" selected="true">-Select-</option>
+									<form:option value="M">Male</form:option>
+									<form:option value="F">Female</form:option>
+							</form:select>
+						</div>
+					</div>
+					
+					
+				</div>
+				
+				<div class="formRow">
+				
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>BIS <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="bis" id="drpbis" class="select-control"  data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${fullListOfBis}" var="bis">
+									<form:option value="${bis.bis_id}">${bis.bis_Name}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>EM <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="EM" id="drpEM" class="select-control"
+								data-validation="required">
+								<option value="" selected="true">-Select-</option>
+								<c:forEach items="${listEmployeesByEm}" var="mgr">
+									<c:set var="listEmployeesByEm" value="${listEmployeesByEm}" />
+									<c:if test="${!empty mgr.email}">
+									<c:if test="${!empty mgr.corpId}">
+										<form:option info="${mgr.email}" value="${mgr.id}">${mgr.lastName} ${mgr.firstName} ( ${mgr.corpId} )</form:option>
+									</c:if>
+									<c:if test="${empty mgr.corpId}">
+										<form:option info="${mgr.email}" value="${mgr.id}">${mgr.lastName} ${mgr.firstName}</form:option>
+									</c:if>
+									</c:if>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per" id="divresourcemanager"
+						style="display: none;">
+						<div class="fieldLbl">
+							<label>Resource Manager<span class="req"></span>:</label>
+						</div>
+						<div class="inputField">
+
+							<form:select path="resourceManager" id="drpresourceManager"
+								class="select-control">
+								<option value="">-Select-</option>
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per" id="divVendor" style="display: none;">
+						<div class="fieldLbl">
+							<label>Vendor <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="vendor" id="drpVendor" class="select-control"
+								data-validation="required">
+								<option value="">-Select-</option>
+							</form:select>
+						</div>
+					</div>
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>INDUS GOAL <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="indusGoals" id="drpIndusGoal"
+								class="select-control" data-validation="required">
+								<option value="" selected="true">-Select-</option>
+								
+								  <c:forEach items="${listIndusGoals}" var="indusgoals">
+								  
+									<form:option value="${indusgoals.indusGoalId}">${indusgoals.indusGoalName}</form:option>
+								 </c:forEach>  
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Role / Technology <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="roleTech" id="drpRoleTech"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								 <c:forEach items="${listRoleTech}" var="roleTech">
+									<form:option value="${roleTech.roleTechId}">${roleTech.roleTechName}</form:option>
+								 </c:forEach> 
+							</form:select>
+						</div>
+					</div>
+				</div>
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Primary Skill <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:select path="primaryTechnology" id="drpPrimaryTechnology"
+								class="select-control" data-validation="required">
+								<option value="">-Select-</option>
+								<c:forEach items="${listTechnology}" var="technology">
+									<form:option value="${technology.technologyId}">${technology.technologyName}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+					</div>
+					
+					<div class="col50per" style="display: block;">
+						<div class="fieldLbl">
+							<label>Staff JIRA # <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="jiraNumber" id="jiraNum" size="10" class="input-control" data-validation="number" data-validation-help="Please enter number"/>
+						</div>
+					</div>
+					
+				</div>
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>On-boarding Date (dd/mm/yyyy) <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="onboardingDate" id="txtJoiningDate"
+								class="input-control" data-validation="date"
+								data-validation-format="dd/mm/yyyy"
+								data-validation-help="Please enter date in dd/mm/yyyy format" />
+						</div>
+					</div>
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Planned Off-boarding Date (dd/mm/yyyy) <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="offboardingDate" id="txtEndDate"
+								class="input-control" data-validation="date"
+								data-validation-format="dd/mm/yyyy"
+								data-validation-help="Please enter date in dd/mm/yyyy format" />
+						</div>
+					</div>
+				</div>
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Billing Start Date (dd/mm/yyyy) <span class="req">*</span>:
+							</label>
+						</div>
+						<div class="inputField">
+							<form:input path="billingStartDate" id="billingDate"
+								class="input-control" data-validation="date"
+								data-validation-format="dd/mm/yyyy"
+								data-validation-help="Please enter date in dd/mm/yyyy format" />
+						</div>
+					</div>
+				</div>
+
+			<div class="formRow">
+
+				<div class="col50per" id="divBundleEM" style="display: none;">
+					<div class="fieldLbl">
+							<label>Bundle EM :</label>
+					</div>
+					<div class="inputField">
+						<form:select path="bundleEM" id="drpbundleEM" class="select-control" data-validation="required">
+						</form:select>
+					</div>
+					
+					
+				</div>
+				
+				<div class="col50per">
+						<div class="fieldLbl">
+							<label>PSALib Type <span class="req">*</span>:</label>
+						</div>
+						<div class="inputField">
+							<form:select path="psaLibTypeID" id="drppsaLibType" class="select-control"  data-validation="required">
+								<option value="" selected="true">-Select-</option>
+								<c:forEach items="${listPSALib}" var="psaLibType">
+									<form:option value="${psaLibType.psaLibId}">${psaLibType.psaLibName}</form:option>
+								</c:forEach>
+							</form:select>
+						</div>
+				</div>
+					
+			</div>
+				
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Request for PSA ID : </label>
+						</div>
+						<div class="inputField">
+							<form:checkbox path="PSAIdReq" id="ChkPSAIdReq"/>
+							Yes
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Hermes Remote Access Request : </label>
+						</div>
+						<div class="inputField">
+							<form:checkbox path="HRAReq" id="ChkHRAReq"/>
+							Yes
+						</div>
+					</div>
+				</div> 
+				
+				<div class="formRow">
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Upper V Cycle : </label>
+						</div>
+						<div class="inputField">
+							<form:checkbox path="upperVCycle" id="ChkUpperVCycle"/>
+							Yes
+						</div>
+					</div>
+					
+					<div class="col50per">
+						<div class="fieldLbl">
+							<label>Time & Material : </label>
+						</div>
+						<div class="inputField">
+							<form:checkbox path="timeNMaterial" id="ChkTimeNMaterial"/>
+							Yes
+						</div>
+					</div>
+				</div> 
+				
+				<div class="formRow">
+					<div class="col50per" id="PCDetails" style="display: none;">
+						
+							
+							<div class="fieldLbl">
+								<label>PC Hostname :</label>
+							</div>
+							
+							<div class="inputField">
+							<form:input path="pcSerialNumber" id="pcDetailsID" class="input-control"  style="width: 168px;"/>
+							</div>
+						
+					</div>
+					<div class="col50per" id="MACAddr" style="display: none;">
+						<div class="fieldLbl">
+							<label id="corpID">MAC Address :</label>
+							
+						</div>
+						<div class="inputField">
+		
+							<form:input path="macAddress" id="macAddressID" class="input-control"  style="width: 168px;"/>
+						</div>
+					</div>
+				</div>
+				
+       
+		 
+		 <%-- <div class="formRow">
+			<div class="fieldLbl">
+				<label>Clarity Code & Allocation <span class="req">*</span>:</label>
+			</div>
+			<div class="inputField">
+				<form:textarea path="clarityCodeAllocation" maxlength="200" minlength="1" id="clarityCA"
+					class="textarea-control" data-validation="required" data-validation-help="Please add Clarity Code & Allocation %"/>
+			</div>
+		 </div> --%>
+		 
+		 <div class="formRow">
+			<div class="fieldLbl">
+				<label>Comment :</label>
+			</div>
+			<div class="inputField">
+				<form:textarea path="comment" maxlength="200" id="comment"
+					class="textarea-control" />
+			</div>
+		</div>
+		
+		 </div>
+		<div class="formRow"></div>
+		
+		<div class="text-center">
+			<input type="submit" value="Add" title="On-board" id="btnSubmit" class="btn-primary" /> 
+			<input type="Reset" value="Reset" title="Reset" id="btnReset" class="btn-primary" />
+		</div>
+		</form:form>
+		
+		<!-- Modal HTML -->
+		    <div id="myModal" class="modal fade">
+		        <div class="modal-dialog">
+		            <div class="modal-content">
+		                <div class="modal-header">
+		                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		                    <h4 class="modal-title">Please raise request for new Country/ Location below</h4>
+		                </div>
+		                <div class="modal-body">
+		                    <form>
+		                        <div class="form-group">
+		                            <label for="newRequest">Request</label>
+		                            <textarea class="form-control" id="newRequest" rows="4"></textarea>
+		                        </div>
+		                    </form>
+		                </div>
+		                <div class="modal-footer">
+		                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+		                    <button type="button" id="MailSubmit" class="btn btn-primary">Send</button>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+
+		
+	</section>
+	
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/datatables.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.form-validator.min.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/date.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/tableExportEmp.js"></script>
+	<script type="text/javascript"
+		src="${pageContext.request.contextPath}/resources/js/jquery.base64.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	
+	
+		
+	
+	
+	
+	<script type="text/javascript">
+	
+		$(document)
+				.ready(
+						function() {
+							
+							/* $("#btnSubmit").submit(function () {   //new
+								 if($("#pcDetailsID").val() != ""){
+								 		$("#pcDetailsID").attr({"data-validation":"alphanumeric", "data-validation-help":"Please enter alphanumeric data"});
+								 		$("#pcDetailsID").attr({"data-validation":"length"}); //, "data-validation-length"="max20"
+								 }
+							       
+							    }); */
+							
+							$("#myModal").on('shown.bs.modal', function(){
+						        $(this).find('textarea').focus();
+						    });
+							$("#drpCountry").val('${preonbemployee.country.countryId}');
+							$("#empSex").val('${preonbemployee.empSex}');
+							$("#drpbundleEM").val('${preonbemployee.bundleEM.bundleEmId}');
+							$("#drpprimprogram").val('${preonbemployee.primaryprogram.primaryProgramId}');
+							$("#mgrEmail").val('${preonbemployee.manager.email}');
+							$("#drpEM").val('${preonbemployee.EM.id}');
+							$("#drpbis").val('${preonbemployee.bis.bis_id}');
+							$("#drpSupervisor").val('${preonbemployee.manager.id}');
+							$("#drpresourceManager").val('${preonbemployee.resourceManager.resourceMgrId}');
+							$("#drpLocation").val('${preonbemployee.location.stateId}');
+							$("#drpVendor").val('${preonbemployee.vendor.vendorId}');
+							$("#drpGrade").val('${preonbemployee.grade.gradeId}');
+							$("#drpGlobalGrade").val('${preonbemployee.globalGrade.globalGradeId}');
+							$("#drpemprole").val('${preonbemployee.emprole}');
+							$("#drpPrimaryTechnology").val('${preonbemployee.primaryTechnology.technologyId}');
+							$("#drpIndusGoal").val('${preonbemployee.indus.indusGoalId}');
+							$("#drpTechDev").val('${preonbemployee.type}');
+							$("#txtCommonID").val('${preonbemployee.empId}');
+							$("#jiraNum").val('${preonbemployee.jiraNumber}');
+							$("#drppsaLibType").val('${preonbemployee.psaLibTypeID}');
+							$("#drpCapEntity").val('${preonbemployee.cgEntity}');
+							$("#drpRoleTech").val('${preonbemployee.roleTech}');
+							$("#ChkPSAIdReq").val('${preonbemployee.PSAIdReq}');
+							/* $("#ChkHRAReq").val('${preonbemployee.HRAReq}');
+							$("#ChkUpperVCycle").val('${preonbemployee.upperVCycle}');
+							$("#ChkTimeNMaterial").val('${preonbemployee.timeNMaterial}'); */
+							$("#id").val('${preonbemployee.id}');
+							 $("#resourceStatus").val('${preonbemployee.resourceStatus}');
+							 $("#isVLANmailDone").val('${preonbemployee.isVLANmailDone}');
+							  $("#EMSubmitDT").val('${preonbemployee.EMSubmitDTString}');
+							    $("#creationdate").val('${preonbemployee.creationdateString}');
+							
+							 $("#btnSubmit").click(function() {
+								 
+								 /* $("#txtJoiningDate").val(new Date('${employee.onboardingDate}'));//
+									$("#txtEndDate").val(new Date('${employee.offboardingDate}'));  */
+								/*  if ($('#form').validate().checkForm()) {                   // checks form for validity
+						                $('#submit').removeClass('button_disabled').attr('disabled', false); // enables button
+						            } else {
+						                $('#submit').addClass('button_disabled').attr('disabled', true);   // disables button
+						            } 
+								*/
+								/* alert($("#txtJoiningDate").val());
+								 var joiningDate = document.getElementById("txtJoiningDate");//new Date($("#txtJoiningDate").val());
+								 var date1 = new Date(joiningDate.value);
+								 var endDate = new Date($("#txtEndDate").val());
+								 alert(date1);
+								 if(endDate < joiningDate){
+									 alert("Please check end Date");
+									 return false;
+								 } */
+							}); 
+							 
+							 $("#MailSubmit").click(function(){ //mailSubmit
+								//alert("mailSubmit");
+							 	
+								 $.getJSON('${newCountryStateMailRequest}',
+											{
+									 newRequest : $('#newRequest').val(),
+									 corpid : $('#txtCorpID').val(),
+									 country : $('#drpCountry').val(),
+										ajax : 'true'
+									},
+									function(data) {
+										
+										if (data) {
+											alert("Mail sent to Security team");
+										}
+									});
+								 $('#myModal').modal('hide'); 
+								 
+							 });
+							 
+							  
+							 
+							 $("#addemployee").submit(function() {
+								if($('#addemployee').isValid()){
+							        $("#btnSubmit").attr("disabled", true);
+							 	}
+							        return true;  
+							 });
+
+							if ($("#userReadOnly").val() == 'true') {
+								$("#btnSubmit").css("display", "none");
+								/* $("#btnReset").css("display","none"); */
+
+								$('div *').prop('disabled', true);
+							}
+							
+													
+													
+													
+													
+							$('#drpSupervisor')
+									.change(
+											function() {
+												$("#drpSupervisor option:selected").each(
+																function() {
+																	var info = $(this).attr("info");
+																	if (info != undefined) {
+																		$("#mgrEmail").val(info);
+																	} else {
+																		$("#mgrEmail").val("");
+																	}
+																});
+											});
+							
+							
+						
+							$('#billingDate').change(
+									function(){
+										
+										$.getJSON('${checkBillingDate}',
+											{
+												billingDateString : $('#billingDate').val(),
+												plannedEndDate : $('#txtEndDate').val(),
+												joiningDate : $('#txtJoiningDate').val(),
+												ajax : 'true'
+											},
+											function(data){
+												
+												if(!data){
+													alert("Billing Date should be in between Onboarding Date and Planned Offboarding Date");
+													$('#billingDate').val('');
+												} 
+											});
+									});
+
+							$('#txtEndDate').change(
+									function(){
+										$.getJSON('${checkPlannedEndDate}',
+											{
+												plannedEndDate : $('#txtEndDate').val(),
+												joiningDate : $('#txtJoiningDate').val(),
+												ajax : 'true'
+											},
+											function(data){
+												if(!data){
+													alert ("Planned Offboarding Date should be greater than Onboarding Date");
+													$('#txtEndDate').val('');
+												}
+											});
+										
+								});
+							
+							$('#txtCommonID').change(
+											function() {
+												$.getJSON('${checkPreOnBEmployeeExists}',
+																{
+																	empId : $('#txtCommonID').val(),
+																	extrnalSelectn : ($("#rdExtEmpCheck").is(':checked')),
+																	internalSelectn : ($("#rdIntEmpCheck").is(':checked')),
+																	ajax : 'true'
+																},
+																function(data) {
+																	
+																	if (data) {
+																		
+																		/* var extrnalSelectn = ($("#rdExtEmpCheck").is(':checked')); */
+																		var internalSelectn = ($("#rdIntEmpCheck").is(':checked'));
+																		
+																		/* if(extrnalSelectn == true) {
+																			alert("Psa Id already exists . Please try another one . ");
+																			$('#txtCommonID').val("");
+																		} 
+																		else*/ if(internalSelectn == true) {
+																		alert("Emp Id already exists . Please try another one . ");
+																		$('#txtCommonID').val("");
+																	}
+																	}
+
+																});
+											});
+							
+							 $('#txtCorpID')
+								.change(
+										function() {
+											$
+													.getJSON(
+															'${getDetailsByCorpIDFromActiveDirectory}',
+															{
+																corpId : $('#txtCorpID').val(),
+																ajax : 'true'
+															},
+															function(data) {
+															 if(data) {
+																 
+																 if(data.email!=null){
+																	/* alert(data); */
+																	$('#txtFirstName').val(data.firstName);
+																	$('#txtLastName').val(data.lastName);
+																	$('#txtEmail').val(data.email);	 
+																	$('#txtCommonID').val(data.empId);
+																	$('#txtggID').val(data.ggId);
+																	$('#drpCountry').val(data.country.countryId);
+																	$('#drpLocation').val(data.location);
+																	$('#drpGlobalGrade').val(data.globalGrade);
+																	$('#drpCapEntity').val(data.capgemEntity);
+																	
+																	countryChangeFn();
+																	
+																 }
+																	
+																 else{
+																		
+																		alert("Corp Id does not exists in Active Directory. Please try another one . ");
+																		$('#txtCorpID').val("");
+																		 $('#txtFirstName').val("");
+																		$('#txtLastName').val("");
+																		$('#txtEmail').val(""); 
+																		
+																	}
+																 
+																} 
+															
+																 
+															});
+										}); 
+							 
+							
+							 function countryChangeFn() {
+								 //one
+								 if ($('#drpCountry').val() == "2") {
+										$("#divOffShoreEm").css("display","");
+										$("#divphase").css("display", "");
+										$("#txtshadowStartDate").css("display", "");
+										$("#divGrade").css("display", "");
+										
+										
+									} else {
+
+										
+										$("#divOffShoreEm").css("display","none");
+										$("#divphase").css("display","none");
+										$("#txtshadowStartDate").css("display","none");
+										$("#divGrade").css("display", "none");
+										//$("#drpGrade").css("display","none");
+									}
+
+									if ($('#drpCountry').val() == "1" || $('#drpCountry').val() == "6") {
+
+										$("#divresourcemanager").css("display", "");
+
+									} else {
+
+										$("#divresourcemanager").css("display", "none");
+
+									}
+									
+									//two
+									$.getJSON(
+											'${findCountryStateURL}',
+											{
+												countryId : $('#drpCountry').val(),
+												ajax : 'true'
+											},
+
+											function(data) {
+												var html = '<option value="">-Select-</option>';
+												var vendorhtml = '<option value="">-Select-</option>';
+												var resmgrhtml = '<option value="">-Select-</option>';
+												var gradehtml = '<option value="">-Select-</option>';
+												$("#txtSpocName").val(data.spoc.spocName);
+												$("#txtSpocEmail").val(data.spoc.spocEmail);
+												$("#spocId").val(data.spoc.spocId);
+												stateList = data.stateList;
+												
+												var stateLength = stateList.length;
+												for (var i = 0; i < stateLength; i++) {
+													html += '<option value="' + stateList[i].stateId + '">'
+															+ stateList[i].stateName
+															+ '</option>';
+															
+												}
+												html += '</option>';
+												$('#drpLocation').html(html);
+
+												resourceMgrList = data.resourceMgrList;
+												var resMgrLength = resourceMgrList.length;
+												for (var i = 0; i < resMgrLength; i++) {
+
+													resmgrhtml += '<option value="' + resourceMgrList[i].resourceMgrId + '">'
+															+ resourceMgrList[i].resourceMgrName
+															+ '</option>';
+
+												}
+												resmgrhtml += '</option>';
+												$('#drpresourceManager').html(resmgrhtml);
+
+												vendorList = data.vendorList;
+												var vendorLength = vendorList.length;
+												for (var i = 0; i < vendorLength; i++) {
+													vendorhtml += '<option value="' + vendorList[i].vendorId + '">'
+															+ vendorList[i].vendorName
+															+ '</option>';
+												}
+												vendorhtml += '</option>';
+												$('#drpVendor').html(vendorhtml);
+												gradeList = data.gradeList;
+												var gradeLength = gradeList.length;
+												for (var i = 0; i < gradeLength; i++) {
+													gradehtml += '<option info="' + gradeList[i].globalGradeId + '" value="' + gradeList[i].gradeId + '">'
+															+ gradeList[i].name
+															+ '</option>';
+												}
+												gradehtml += '</option>';
+												$('#drpGrade')
+														.html(
+																gradehtml);
+											});
+									
+							 }
+							
+							
+							
+							
+							$('#txtCorpID')
+							.change(
+									function() {
+										$
+												.getJSON(
+														'${checkCorpIdExists}',
+														{
+															corpId : $(
+																	'#txtCorpID')
+																	.val(),
+															ajax : 'true'
+														},
+														function(data) {
+															if (data == true) {
+																alert("Corp Id already exists . Please try another one . ");
+																$('#txtCorpID').val("");
+																$('#txtFirstName').val("");
+																$('#txtLastName').val("");
+																$('#txtEmail').val("");
+																
+															}
+															
+
+														});
+									});
+							
+							
+							
+							$('#txtEmail')
+							.change(
+									function() {
+										$
+												.getJSON(
+														'${checkEmployeeEmailExists}',
+														{
+															email : $(
+																	'#txtEmail')
+																	.val(),
+															ajax : 'true'
+														},
+														function(data) {
+															if (data == true) {
+																alert("Email Id already exists . Please try another one . ");
+																$('#txtEmail').val("");
+															}
+
+														});
+									});	
+							
+							
+							
+							$('#drpCountry').change(
+									
+									function() {
+										if ($(this).val() == "2") {
+											$("#divOffShoreEm").css("display","");
+											$("#divphase").css("display", "");
+											$("#txtshadowStartDate").css("display", "");
+											//$("#drpGrade").css("display", "");
+											$("#divGrade").css("display", "");
+											
+										} else {
+
+											
+											$("#divOffShoreEm").css("display","none");
+											$("#divphase").css("display","none");
+											$("#txtshadowStartDate").css("display","none");
+											//$("#drpGrade").css("display", "none");
+											$("#divGrade").css("display", "none");
+										}
+
+										if ($(this).val() == "1" || $(this).val() == "6") {
+
+											$("#divresourcemanager").css(
+													"display", "");
+
+										} else {
+
+											$("#divresourcemanager").css(
+													"display", "none");
+
+										}
+										
+
+									} );
+
+							$('#drpLocation').change(function() { //bhavna
+								
+								
+								var locationId = $('#drpLocation').val();
+								
+								$("#PCDetails").css("display","none");
+								$("#MACAddr").css("display","none");
+								
+								/* if(${VLANList} == undefined){
+									alert("change");
+								} */
+								$.each(${VLANList}, function( vlanIndex, val ) {
+									//alert("VLAN Check " +val);
+									if(val == locationId){
+										$("#PCDetails").css("display","");
+										$("#MACAddr").css("display","");
+									}
+								});
+								
+								$.each( ${newStateList}, function( index, val ) {
+									//alert("New Site Check " +val);
+									if(val == locationId){
+										$('#myModal').modal('show'); 
+									}
+								});
+								
+							});
+						
+							$('#drpbis').change(
+									 
+									function() {
+										$.getJSON(
+												'${findBundleEMfromBIS}',
+												{
+												id : $(this).val(),
+														ajax : 'true'
+													},
+											
+													function(data) {
+														$("#divBundleEM").css("display","");
+														 	
+														var bundleEMhtml = '<option value="' + data.bundleEM.bundleEmId + '">'
+															+ data.bundleEM.bundleEmName
+															+ '</option>';
+															bundleEMhtml += '</option>';
+															$('#drpbundleEM').html(bundleEMhtml);
+													});
+									});
+							
+ 								
+							 /* $('#drpbundleEM').change(
+									 
+									function() {
+										$.getJSON(
+														'${findBIS}',
+															{
+															id : $(this).val(),
+																	ajax : 'true'
+																},
+														
+																function(data) {
+										
+																	bisList = data.bisList;
+																	var bisListLength = bisList.length;
+																	if(bisListLength > 0 ){
+																		$('#drpbis').val(bisList[0].bis_id).prop('selected', true);
+																	}
+																	else{
+																		$('#drpbis').val('1').prop('selected', true);
+																	}
+																	
+																});
+									}); */
+														
+							
+
+							$('#drpCountry')
+									.change(
+											function() {
+												$
+														.getJSON(
+																'${findCountryStateURL}',
+																{
+																	countryId : $(
+																			this)
+																			.val(),
+																	ajax : 'true'
+																},
+
+																function(data) {
+																	var html = '<option value="">-Select-</option>';
+																	var vendorhtml = '<option value="">-Select-</option>';
+																	var resmgrhtml = '<option value="">-Select-</option>';
+																	var gradehtml = '<option value="">-Select-</option>';
+																	$("#txtSpocName").val(data.spoc.spocName);
+																	$("#txtSpocEmail").val(data.spoc.spocEmail);
+																	$("#spocId")
+																			.val(
+																					data.spoc.spocId);
+																	stateList = data.stateList;
+																	
+																	var stateLength = stateList.length;
+																	for (var i = 0; i < stateLength; i++) {
+																		html += '<option value="' + stateList[i].stateId + '">'
+																				+ stateList[i].stateName
+																				+ '</option>';
+																				
+																	}
+																	html += '</option>';
+																	$(
+																			'#drpLocation')
+																			.html(
+																					html);
+
+																	resourceMgrList = data.resourceMgrList;
+																	var resMgrLength = resourceMgrList.length;
+																	for (var i = 0; i < resMgrLength; i++) {
+
+																		resmgrhtml += '<option value="' + resourceMgrList[i].resourceMgrId + '">'
+																				+ resourceMgrList[i].resourceMgrName
+																				+ '</option>';
+
+																	}
+																	resmgrhtml += '</option>';
+																	$('#drpresourceManager').html(resmgrhtml);
+
+																	vendorList = data.vendorList;
+																	var vendorLength = vendorList.length;
+																	for (var i = 0; i < vendorLength; i++) {
+																		vendorhtml += '<option value="' + vendorList[i].vendorId + '">'
+																				+ vendorList[i].vendorName
+																				+ '</option>';
+																	}
+																	vendorhtml += '</option>';
+																	$('#drpVendor').html(vendorhtml);
+																	gradeList = data.gradeList;
+																	var gradeLength = gradeList.length;
+																	for (var i = 0; i < gradeLength; i++) {
+																		gradehtml += '<option info="' + gradeList[i].globalGradeId + '" value="' + gradeList[i].gradeId + '">'
+																				+ gradeList[i].name
+																				+ '</option>';
+																	}
+																	gradehtml += '</option>';
+																	$(
+																			'#drpGrade')
+																			.html(
+																					gradehtml);
+																});
+											} );
+							$('#drpGrade').change(
+									function() {
+										var info = $("option:selected", this)
+												.attr("info");
+										if (info != undefined && info != 0) {
+											$("#drpGlobalGrade").val(info);
+										} else {
+											$("#drpGlobalGrade").val("");
+										}
+									});
+							$.validate({
+								form : '#addemployee',
+								modules : 'date'
+							});
+							$("#rdIntEmpCheck")
+									.click(
+											function() {
+												removeValidation();
+												/* $('#txtCommonID').removeAttr(
+														'data-validation'); */
+														$('#txtCommonID').attr("data-validation","required");
+												$('#txtCommonID').get(0)
+														.setAttribute('type',
+																'text');
+												$("#commonID").css("display",
+												"");
+												$("#txtCommonID").css("display","");
+												$("#commonID")
+														.html(
+																"Emp ID <span class='req'></span>:");
+												$("#corpID")
+														.html(
+																"CORP ID <span class='req'>*</span>:");
+												$("#txtCorpID").attr("data-validation","required");
+												$("#globalGrade")
+												.html(
+														"Global Grade <span class='req'>*</span>:");
+												$("#drpGlobalGrade").attr("data-validation","required");
+												
+												$("#divVendor").css("display",
+														"none");
+												$('#txtEndDate').val(
+														"31/05/2021");
+												$("#divCorpId").css("display",
+														"");
+												
+												$("#divGlobalGrade").css("display",
+												"");
+												
+												$("#divPSA").css("display", "");
+											})
+
+							$("#rdExtEmpCheck")
+									.click(
+											function() {
+												removeValidation();
+												$('#txtCommonID').css("display",
+												"none"); 
+												$('#commonID').css("display",
+												"none");
+											
+												 /*$("#commonID").html("PSA ID :");*/
+												/* $('#txtCorpID').removeAttr(
+														'data-validation');
+												$("#corpID")
+														.html(
+																"CORP ID <span class='req'></span>:"); */
+												
+												$('#drpGlobalGrade').removeAttr(
+												'data-validation');
+									
+												$("#globalGrade")
+												.html(
+														"Global Grade <span class='req'></span>:");
+												
+												
+												$("#divVendor").css("display",
+														"");
+												$("#divCorpId").css("display",
+														"");
+												
+												
+												$("#divGlobalGrade").css("display",
+												"");
+												
+											
+												
+												
+												$('#txtEndDate').val("");
+												/*$("#divPSA").css("display",
+														"none");
+												 $("#txtPsaId").attr(
+														"data-validation",
+														"number"); */
+											});
+
+							$("#btnSubmit")
+									.click(
+											function() {
+												var offshoreemidval = $('#drpoffShoreEm').val();
+												var countryVal = $("#drpCountry").val();
+												if (offshoreemidval == 0 && countryVal == 2){
+										
+												    alert("Please select correct value for OffshoreEm");
+												    return false;
+												}
+												    else{
+												    	return true;
+												    }
+												 
+												
+												if ($("#rdIntEmpCheck").is(
+														":checked") == true) {
+													if ($("#txtEndDate").val() != "") {
+														$("#txtEndDate")
+																.attr(
+																		{
+																			"data-validation" : "date",
+																			"data-validation-format" : "dd/mm/yyyy",
+																			"data-validation-help" : "Please enter date in dd/mm/yyyy format"
+																		});
+													}
+													if ($("#txtDob").val() != "") {
+														$("#txtDob")
+																.attr(
+																		{
+																			"data-validation" : "date",
+																			"data-validation-format" : "dd/mm/yyyy",
+																			"data-validation-help" : "Please enter date in dd/mm/yyyy format"
+																		});
+													}
+												}
+												if ($("#rdExtEmpCheck").is(
+														":checked") == true) {
+													$("#txtEndDate")
+															.attr(
+																	{
+																		"data-validation" : "date",
+																		"data-validation-format" : "dd/mm/yyyy",
+																		"data-validation-help" : "Please enter date in dd/mm/yyyy format"
+																	});
+													if ($("#txtDob").val() != "") {
+														$("#txtDob")
+																.attr(
+																		{
+																			"data-validation" : "date",
+																			"data-validation-format" : "dd/mm/yyyy",
+																			"data-validation-help" : "Please enter date in dd/mm/yyyy format"
+																		});
+													}
+
+												}
+										
+												
+											});
+						
+						 
+						
+							/* var modal = document.getElementById('myModal');
+							var span = document.getElementsByClassName("close")[0];
+							btnReset.onclick = function() {
+							    modal.style.display = "block";
+							}
+							$("#btnReset")
+							.click(function() {
+								modal.style.display = "block"; );
+							
+							});
+							span.onclick = function() {
+							    modal.style.display = "none";
+							}
+							
+							window.onclick = function(event) {
+							    if (event.target == modal) {
+							        modal.style.display = "none";
+							    }
+							} */
+						});
+						
+						
+
+		/* function myfun(){
+		    alert('hello');
+		}
+		$(window).bind('beforeunload', function(){
+			myfun();
+			return 'Are you sure you want to leave?';
+		});  */
+		  
+		/* var unloadEvent = function (e) {
+	        var confirmationMessage = "Warning: Leaving this page will result in any unsaved data being lost. Are you sure you wish to continue?";
+
+	        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+	        return confirmationMessage; //Webkit, Safari, Chrome etc.
+	    };
+	    window.addEventListener("beforeunload", unloadEvent);  working show */
+		  
+		  /* $(window).unload(function(){
+			  alert('Bye.');
+			});*/
+		
+			/* window.onunload = function() {
+			    myfun();
+			    alert('Bye.');
+			} */
+		function removeValidation() {
+			//first remove all the validation
+			$('.form-error').remove();
+			$('.error').removeAttr('style');
+			$('.error').removeClass('error');
+		}
+	</script>
+</body>
+</html>

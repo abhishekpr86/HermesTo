@@ -1,0 +1,37 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.capgemini.onboarding.dao.CgEntityDao;
+import com.capgemini.onboarding.model.CGEntityDetail;
+
+@Service
+public class CgEntityServiceImpl implements CgEntityService {
+
+	@Autowired
+	private CgEntityDao cgEntityDao;
+
+	@Override
+	@Transactional
+	public List<CGEntityDetail> listCgEntity() {
+		return cgEntityDao.listCgEntity();
+	}
+
+	@Override
+	@Transactional
+	public CGEntityDetail getCgEntityById(int cgEntityId) {
+		return cgEntityDao.getCgEntityById(cgEntityId);
+	}
+
+	@Override
+	@Transactional
+	public void updateCGEntity(CGEntityDetail cg) {
+		// TODO Auto-generated method stub
+		 this.cgEntityDao.updateCGEntity(cg);
+	}
+
+}

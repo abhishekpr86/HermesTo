@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ReportController – Change Document & Unit Test Cases</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 40px; color: #1a1a1a; }
+  h1 { font-size: 18pt; color: #1F3864; border-bottom: 3px solid #1F3864; padding-bottom: 6px; }
+  h2 { font-size: 14pt; color: #2E5496; margin-top: 30px; border-bottom: 2px solid #2E5496; padding-bottom: 4px; }
+  h3 { font-size: 12pt; color: #1F3864; margin-top: 18px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 22px; font-size: 10pt; }
+  th { background-color: #2E5496; color: white; padding: 8px 10px; text-align: left; }
+  td { border: 1px solid #BBBBBB; padding: 7px 10px; vertical-align: top; }
+  tr:nth-child(even) { background-color: #EEF2F7; }
+  .meta-table td { border: none; padding: 4px 10px; }
+  .meta-table tr:nth-child(even) { background-color: white; }
+  .section-box { background-color: #F0F4FA; border-left: 5px solid #2E5496; padding: 10px 16px; margin: 10px 0 18px 0; line-height: 1.7; }
+  .code { font-family: Consolas, monospace; background-color: #F4F4F4; padding: 2px 6px; border-radius: 3px; font-size: 10pt; }
+  pre { font-family: Consolas, monospace; background-color: #F4F4F4; border: 1px solid #DDDDDD; padding: 10px 14px; font-size: 9.5pt; line-height: 1.5; border-radius: 4px; white-space: pre-wrap; }
+  .before { background-color: #FFF0F0; border-left: 4px solid #CC0000; padding: 8px 14px; margin: 4px 0; }
+  .after  { background-color: #F0FFF0; border-left: 4px solid #007700; padding: 8px 14px; margin: 4px 0; }
+  .tag-security { background-color: #FFD7D7; color: #8B0000; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-positive { background-color: #D7FFD7; color: #006400; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-negative { background-color: #FFF3CD; color: #856404; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-bug     { background-color: #EDD9FF; color: #4B0082; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  p { line-height: 1.6; }
+  ul { line-height: 1.8; }
+  .change-header { background-color: #1F3864; color: white; padding: 6px 12px; font-weight: bold; font-size: 11pt; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h1>ReportController.java – Change Document &amp; Unit Test Cases</h1>
+
+<table class="meta-table">
+  <tr><td><strong>Project</strong></td><td>Hermes Onboarding Tool</td><td><strong>Version</strong></td><td>1.0.0-BUILD-SNAPSHOT</td></tr>
+  <tr><td><strong>File Changed</strong></td><td>ReportController.java</td><td><strong>Date</strong></td><td>May 14, 2026</td></tr>
+  <tr><td><strong>Reason</strong></td><td colspan="3">FileNotFoundException on download + hardcoded Windows paths + race condition + missing path traversal protection</td></tr>
+  <tr><td><strong>Prepared By</strong></td><td>GitHub Copilot (assisted)</td><td><strong>Environment</strong></td><td>Java 8, Spring 4.3.30, Tomcat 9</td></tr>
+</table>
+
+<hr/>
+
+<!-- ============================================================ -->
+<h2>Part 1 – What Was The Problem?</h2>
+
+<div class="section-box">
+  When a user clicked the download button for the Moodle Completion Report, the server threw:
+  <br/><br/>
+  <span class="code">java.io.FileNotFoundException: C:\OnboardingToolExport\MoodleCompletion_14-05-2026 13 42 35.xlsx (The system cannot find the file specified)</span>
+  <br/><br/>
+  <strong>Why?</strong> The Excel file was being <em>written</em> to the system temp directory (<span class="code">java.io.tmpdir</span>) by MoodleController, 
+  but <span class="code">ReportController.downloadFile()</span> was trying to <em>read</em> it from <span class="code">C:\OnboardingToolExport\</span> — a folder that does not exist on the server. 
+  The file was being written to one place and looked up in another.
+  <br/><br/>
+  Additionally, the same <span class="code">C:\OnboardingToolExport\</span> path was hardcoded in 3 other methods in the same file, meaning ALL report exports would fail on any machine or OS that does not have exactly that folder.
+</div>
+
+<!-- ============================================================ -->
+<h2>Part 2 – Changes Made (5 Changes)</h2>
+
+<!-- CHANGE 1 -->
+<div class="change-header">Change 1 – Removed Shared Instance Variable <code>absolutePath</code></div>
+<div class="section-box">
+  <strong>Location:</strong> Class-level field, approximately line 80<br/>
+  <strong>Type of issue:</strong> Race Condition (concurrent request safety)<br/><br/>
+  <strong>Explanation:</strong> Spring controllers are singletons — only one instance exists and is shared by ALL users simultaneously. 
+  <span class="code">private String absolutePath</span> was a shared field. If User A generated a report and User B simultaneously generated a different report, 
+  User B's path would overwrite User A's — and User A's download would try to fetch the wrong file.
+</div>
+<div class="before"><strong>BEFORE (vulnerable):</strong><pre>public class ReportController {
+    private Logger logger = Logger.getLogger(ReportController.class);
+    private String absolutePath;   // ← shared across ALL users — race condition</pre></div>
+<div class="after"><strong>AFTER (fixed):</strong><pre>public class ReportController {
+    private Logger logger = Logger.getLogger(ReportController.class);
+    // absolutePath removed — was never needed with tmpdir approach</pre></div>
+
+<br/>
+
+<!-- CHANGE 2 -->
+<div class="change-header">Change 2 – <code>createResourceReportFile()</code> – Write Path Fixed</div>
+<div class="section-box">
+  <strong>Location:</strong> Method <span class="code">createResourceReportFile()</span> (mapped to <span class="code">/ResReportExcelExport</span>)<br/>
+  <strong>Type of issue:</strong> Hardcoded Windows path — would crash on Linux / cloud deployment<br/><br/>
+  <strong>Explanation:</strong> The Employee List Excel report was written to <span class="code">C:/OnboardingToolExport/</span>. 
+  This path only works on a specific Windows machine where the folder was manually created. 
+  On any other machine, test server, or Linux host it throws an exception. 
+  The OS-provided temp directory (<span class="code">java.io.tmpdir</span>) is always available on every OS.
+</div>
+<div class="before"><strong>BEFORE:</strong><pre>String excelFilePath = "C:/OnboardingToolExport/";   // ← hardcoded, Windows-only</pre></div>
+<div class="after"><strong>AFTER:</strong><pre>String excelFilePath = System.getProperty("java.io.tmpdir") + File.separator;   // ← works on any OS</pre></div>
+
+<br/>
+
+<!-- CHANGE 3 -->
+<div class="change-header">Change 3 – <code>bisRotationExcelExport()</code> – Write Path Fixed + Relative File Removed</div>
+<div class="section-box">
+  <strong>Location:</strong> Method <span class="code">bisRotationExcelExport()</span> (mapped to <span class="code">/bisRotationExcelExport</span>)<br/>
+  <strong>Type of issue:</strong> Hardcoded Windows path + relative file path + race condition via <span class="code">this.absolutePath</span><br/><br/>
+  <strong>Explanation:</strong> Two problems existed here:
+  <ul>
+    <li><span class="code">new File("ResourceRotation-Export.xlsx")</span> creates a file relative to wherever Tomcat was launched from — this is unpredictable and differs between machines</li>
+    <li><span class="code">this.absolutePath = file.getAbsolutePath()</span> wrote to the shared instance field (race condition)</li>
+    <li><span class="code">"C:/OnboardingToolExport/ResourceRotation-Export.xlsx"</span> is a Windows-only hardcoded path</li>
+  </ul>
+</div>
+<div class="before"><strong>BEFORE:</strong><pre>File file = new File("ResourceRotation-Export.xlsx");    // ← relative path, unpredictable
+System.out.println(file.getAbsolutePath());
+this.absolutePath = file.getAbsolutePath();              // ← shared field, race condition
+logger.info("absolutePath " + absolutePath);
+
+String excelFilePath = "C:/OnboardingToolExport/ResourceRotation-Export.xlsx";  // ← hardcoded</pre></div>
+<div class="after"><strong>AFTER:</strong><pre>// All three lines above removed
+String excelFilePath = System.getProperty("java.io.tmpdir") + File.separator + "ResourceRotation-Export.xlsx";</pre></div>
+
+<br/>
+
+<!-- CHANGE 4 -->
+<div class="change-header">Change 4 – <code>downloadFile()</code> – Root Cause Fix + Path Traversal Protection Added</div>
+<div class="section-box">
+  <strong>Location:</strong> Method <span class="code">downloadFile()</span> (mapped to <span class="code">/downloadReportFile/{file}</span>)<br/>
+  <strong>Type of issue:</strong> FileNotFoundException (direct bug) + Path Traversal attack vulnerability<br/><br/>
+  <strong>Explanation of the download bug:</strong> The <span class="code">file</span> path variable from the URL was appended directly to <span class="code">C:/OnboardingToolExport/</span>. 
+  Since the file was written to <span class="code">tmpdir</span>, it was never at that path — causing the <span class="code">FileNotFoundException</span> reported in the error.<br/><br/>
+  <strong>Explanation of path traversal:</strong> The <span class="code">file</span> parameter comes from the user's browser URL. Without validation, an attacker could pass 
+  <span class="code">../../WEB-INF/web.xml</span> (which contains database passwords) and the server would send that file to them. 
+  Two protection layers were added:
+  <ul>
+    <li><strong>Layer 1:</strong> Check for <span class="code">/</span>, <span class="code">\</span>, <span class="code">..</span>, and null bytes — return HTTP 400 immediately</li>
+    <li><strong>Layer 2:</strong> Canonical path check — even if Layer 1 is somehow bypassed, verify the resolved file path is inside <span class="code">tmpdir</span></li>
+  </ul>
+</div>
+<div class="before"><strong>BEFORE (broken + vulnerable):</strong><pre>logger.info("PROD CHECK - Generated excel file by /ResReportExcelExport call.");
+logger.info("absolute " + this.absolutePath);
+File metricsReportFile = new File("C:/OnboardingToolExport/" + file + ".xlsx");  // ← wrong location, no validation
+InputStream is = new FileInputStream(metricsReportFile);   // ← FileNotFoundException thrown here
+response.setHeader("Content-Disposition", "attachment; filename=" + metricsReportFile.getName());
+FileCopyUtils.copy(is, response.getOutputStream());
+response.flushBuffer();
+is.close();</pre></div>
+<div class="after"><strong>AFTER (fixed + secured):</strong><pre>// Layer 1: reject dangerous characters
+if (file.contains("/") || file.contains("\\") || file.contains("..") || file.contains("\0")) {
+    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid filename");
+    return;
+}
+// Resolve file inside tmpdir
+File metricsReportFile = new File(System.getProperty("java.io.tmpdir"), file + ".xlsx");
+// Layer 2: canonical path check — file must stay inside tmpdir
+if (!metricsReportFile.getCanonicalPath().startsWith(
+        new File(System.getProperty("java.io.tmpdir")).getCanonicalPath())) {
+    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+    return;
+}
+logger.info("downloadReportFile: serving " + metricsReportFile.getName());
+InputStream is = new FileInputStream(metricsReportFile);
+response.setHeader("Content-Disposition", "attachment; filename=" + metricsReportFile.getName());
+FileCopyUtils.copy(is, response.getOutputStream());
+response.flushBuffer();
+is.close();</pre></div>
+
+<br/>
+
+<!-- CHANGE 5 -->
+<div class="change-header">Change 5 – <code>onbReqReportFile()</code> – Write Path Fixed</div>
+<div class="section-box">
+  <strong>Location:</strong> Method <span class="code">onbReqReportFile()</span> (mapped to <span class="code">/OnbReqReportExcelExport</span>)<br/>
+  <strong>Type of issue:</strong> Hardcoded Windows path<br/><br/>
+  <strong>Explanation:</strong> Same pattern as Change 2 — the Onboarding Request Employee List report was written to <span class="code">C:/OnboardingToolExport/</span>. Fixed to use <span class="code">tmpdir</span>.
+</div>
+<div class="before"><strong>BEFORE:</strong><pre>String excelFilePath = "C:/OnboardingToolExport/";</pre></div>
+<div class="after"><strong>AFTER:</strong><pre>String excelFilePath = System.getProperty("java.io.tmpdir") + File.separator;</pre></div>
+
+<hr/>
+
+<!-- ============================================================ -->
+<h2>Part 3 – Unit Test Cases</h2>
+
+<!-- TC AREA 1 -->
+<h3>3.1 – downloadFile() – Core Bug Fix (FileNotFoundException)</h3>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-01</td>
+    <td>Download Moodle Completion report successfully</td>
+    <td>User clicked "Generate" first — file exists in tmpdir</td>
+    <td>GET /downloadReportFile/MoodleCompletion_14-05-2026 13 42 35</td>
+    <td>1. Generate the report via /MoodleReportExcelExport<br/>2. Note the filename returned<br/>3. Call /downloadReportFile/{filename without .xlsx}<br/>4. Check response</td>
+    <td>HTTP 200. Excel file downloads successfully. No FileNotFoundException in logs.</td>
+    <td><span class="tag-bug">BUG FIX</span></td>
+  </tr>
+  <tr>
+    <td>TC-02</td>
+    <td>Download Employee List report (ResReportExcelExport)</td>
+    <td>At least one employee in DB</td>
+    <td>GET /ResReportExcelExport with valid params, then download</td>
+    <td>1. Call /ResReportExcelExport<br/>2. Note returned filename<br/>3. Call /downloadReportFile/{filename}<br/>4. Check response</td>
+    <td>HTTP 200. Employee List xlsx file downloads correctly.</td>
+    <td><span class="tag-bug">BUG FIX</span></td>
+  </tr>
+  <tr>
+    <td>TC-03</td>
+    <td>Download BIS Rotation report</td>
+    <td>BIS rotation data exists</td>
+    <td>GET /bisRotationExcelExport with valid params</td>
+    <td>1. Call /bisRotationExcelExport<br/>2. Confirm response returns "ResourceRotation-Export"<br/>3. Call /downloadReportFile/ResourceRotation-Export<br/>4. Check response</td>
+    <td>HTTP 200. ResourceRotation-Export.xlsx downloads correctly.</td>
+    <td><span class="tag-bug">BUG FIX</span></td>
+  </tr>
+  <tr>
+    <td>TC-04</td>
+    <td>Download Onboarding Request report</td>
+    <td>Pre-onboarding records exist</td>
+    <td>GET /OnbReqReportExcelExport with valid params, then download</td>
+    <td>1. Call /OnbReqReportExcelExport<br/>2. Note filename returned<br/>3. Call /downloadReportFile/{filename}<br/>4. Check response</td>
+    <td>HTTP 200. Onboarding request xlsx downloads correctly.</td>
+    <td><span class="tag-bug">BUG FIX</span></td>
+  </tr>
+  <tr>
+    <td>TC-05</td>
+    <td>No file written to C:/OnboardingToolExport/</td>
+    <td>Generate any report</td>
+    <td>Call any report generation endpoint</td>
+    <td>1. Generate a report<br/>2. Check if C:/OnboardingToolExport/ folder is created<br/>3. Check if any .xlsx file appears in that folder</td>
+    <td>No file written to C:/OnboardingToolExport/. All files written to tmpdir only.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-06</td>
+    <td>File written to system tmpdir</td>
+    <td>Tomcat running</td>
+    <td>Call any report generation endpoint</td>
+    <td>1. Generate a report<br/>2. Check System.getProperty("java.io.tmpdir") folder<br/>3. Confirm .xlsx file exists there</td>
+    <td>Excel file exists in tmpdir. File is deleted after download (as per metricsReportFile.delete()).</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- TC AREA 2 -->
+<h3>3.2 – downloadFile() – Path Traversal Security Tests</h3>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input (filename in URL)</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-07</td>
+    <td>Path traversal with forward slash</td>
+    <td>App running</td>
+    <td>file = "../../WEB-INF/web.xml"</td>
+    <td>1. Call GET /downloadReportFile/../../WEB-INF/web.xml<br/>2. Check HTTP response status</td>
+    <td>HTTP 400 Bad Request. File NOT read. "/" detected in Layer 1.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-08</td>
+    <td>Path traversal with backslash</td>
+    <td>App running</td>
+    <td>file = "..\\..\\ windows\\system32\\cmd"</td>
+    <td>1. Call /downloadReportFile/ with backslash in filename<br/>2. Check HTTP response status</td>
+    <td>HTTP 400 Bad Request. "\" detected in Layer 1.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-09</td>
+    <td>Path traversal with double dot</td>
+    <td>App running</td>
+    <td>file = "..SomeFile"</td>
+    <td>1. Call /downloadReportFile/..SomeFile<br/>2. Check HTTP response status</td>
+    <td>HTTP 400 Bad Request. ".." detected in Layer 1.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-10</td>
+    <td>Null byte injection in filename</td>
+    <td>App running</td>
+    <td>file = "report%00.xlsx"</td>
+    <td>1. Send URL with %00 (null byte) encoded in filename<br/>2. Check HTTP response status</td>
+    <td>HTTP 400 Bad Request. Null byte "\0" detected in Layer 1.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-11</td>
+    <td>Canonical path check blocks file outside tmpdir</td>
+    <td>App running</td>
+    <td>Crafted filename that resolves outside tmpdir via canonical path</td>
+    <td>1. Craft a filename that bypasses Layer 1 but resolves outside tmpdir<br/>2. Check HTTP response status</td>
+    <td>HTTP 403 Forbidden. Canonical path check in Layer 2 blocks the request.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-12</td>
+    <td>Valid filename passes all checks</td>
+    <td>File exists in tmpdir</td>
+    <td>file = "MoodleCompletion_14-05-2026 13 00 00"</td>
+    <td>1. Generate report so file exists in tmpdir<br/>2. Call /downloadReportFile/{valid filename without .xlsx}<br/>3. Check response</td>
+    <td>HTTP 200. File streams correctly. Not blocked by any validation.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- TC AREA 3 -->
+<h3>3.3 – Race Condition Fix (Removed absolutePath Instance Variable)</h3>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-13</td>
+    <td>absolutePath field no longer exists</td>
+    <td>ReportController.class is compiled</td>
+    <td>N/A</td>
+    <td>1. Use Java Reflection:<br/><span class="code">ReportController.class.getDeclaredField("absolutePath")</span></td>
+    <td>Throws NoSuchFieldException — field has been removed</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-14</td>
+    <td>Concurrent report generations do not interfere</td>
+    <td>App running with multiple users logged in</td>
+    <td>User A generates Employee report, User B simultaneously generates Moodle report</td>
+    <td>1. Send two concurrent requests to different report endpoints<br/>2. Both download their respective files<br/>3. Verify each file content is correct for the respective user</td>
+    <td>User A downloads correct Employee xlsx. User B downloads correct Moodle xlsx. No cross-contamination.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+</table>
+
+<!-- TC AREA 4 -->
+<h3>3.4 – Portability Tests (No Hardcoded Paths)</h3>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-15</td>
+    <td>No C:/OnboardingToolExport/ in source code</td>
+    <td>Source code accessible</td>
+    <td>N/A</td>
+    <td>1. Open ReportController.java<br/>2. Search for "OnboardingToolExport"</td>
+    <td>Zero occurrences found</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-16</td>
+    <td>All report methods write to tmpdir</td>
+    <td>Source code accessible</td>
+    <td>N/A</td>
+    <td>1. Search ReportController.java for "System.getProperty(\"java.io.tmpdir\")"<br/>2. Confirm all 3 report-write methods use it</td>
+    <td>createResourceReportFile(), bisRotationExcelExport(), and onbReqReportFile() all use tmpdir</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-17</td>
+    <td>Report generation works without C:/OnboardingToolExport/ folder existing</td>
+    <td>C:/OnboardingToolExport/ folder does NOT exist on the machine</td>
+    <td>Generate any report</td>
+    <td>1. Confirm C:/OnboardingToolExport/ does not exist<br/>2. Generate a report<br/>3. Check for exceptions</td>
+    <td>No exception thrown. Report generated successfully in tmpdir.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-18</td>
+    <td>File.separator used instead of hardcoded slash</td>
+    <td>Source code accessible</td>
+    <td>N/A</td>
+    <td>1. Search for File.separator usage in the changed methods</td>
+    <td>File.separator used — code is OS-independent (works on both Windows \ and Linux /)</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- TC AREA 5 -->
+<h3>3.5 – Negative / Edge Case Tests</h3>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-19</td>
+    <td>Download before file is generated</td>
+    <td>File does NOT exist in tmpdir</td>
+    <td>file = "SomeReport_01-01-2025 00 00 00"</td>
+    <td>1. Call /downloadReportFile/{non-existent filename}<br/>2. Check response</td>
+    <td>FileNotFoundException thrown — server returns 500 or a user-friendly error. File is not found in tmpdir (correct behaviour).</td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-20</td>
+    <td>Empty filename in download URL</td>
+    <td>App running</td>
+    <td>file = "" (empty)</td>
+    <td>1. Call /downloadReportFile/ with empty path variable<br/>2. Check response</td>
+    <td>Spring returns 404 (no matching route). Nothing written or read.</td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-21</td>
+    <td>File already deleted after first download</td>
+    <td>Report file exists in tmpdir</td>
+    <td>Same filename called twice</td>
+    <td>1. Download a report (first call — file deleted after)<br/>2. Call download again with same filename<br/>3. Check response</td>
+    <td>Second call returns FileNotFoundException — file was deleted after the first download (expected behaviour per metricsReportFile.delete()).</td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>Part 4 – Summary</h2>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Area</th>
+    <th>Test Name</th>
+    <th>Type</th>
+    <th>Result</th>
+  </tr>
+  <tr><td>TC-01</td><td>Bug Fix</td><td>Download Moodle Completion report</td><td><span class="tag-bug">BUG FIX</span></td><td></td></tr>
+  <tr><td>TC-02</td><td>Bug Fix</td><td>Download Employee List report</td><td><span class="tag-bug">BUG FIX</span></td><td></td></tr>
+  <tr><td>TC-03</td><td>Bug Fix</td><td>Download BIS Rotation report</td><td><span class="tag-bug">BUG FIX</span></td><td></td></tr>
+  <tr><td>TC-04</td><td>Bug Fix</td><td>Download Onboarding Request report</td><td><span class="tag-bug">BUG FIX</span></td><td></td></tr>
+  <tr><td>TC-05</td><td>Bug Fix</td><td>No file written to C:/OnboardingToolExport/</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-06</td><td>Bug Fix</td><td>File written to system tmpdir</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-07</td><td>Path Traversal</td><td>Forward slash blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-08</td><td>Path Traversal</td><td>Backslash blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-09</td><td>Path Traversal</td><td>Double dot blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-10</td><td>Path Traversal</td><td>Null byte blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-11</td><td>Path Traversal</td><td>Canonical check blocks escape</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-12</td><td>Path Traversal</td><td>Valid filename passes all checks</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-13</td><td>Race Condition</td><td>absolutePath field removed</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-14</td><td>Race Condition</td><td>Concurrent generations do not interfere</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-15</td><td>Portability</td><td>No C:/OnboardingToolExport/ in source</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-16</td><td>Portability</td><td>All report methods write to tmpdir</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-17</td><td>Portability</td><td>Works without hardcoded folder existing</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-18</td><td>Portability</td><td>File.separator used</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-19</td><td>Edge Case</td><td>Download before generate</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+  <tr><td>TC-20</td><td>Edge Case</td><td>Empty filename</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+  <tr><td>TC-21</td><td>Edge Case</td><td>File deleted after first download</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+</table>
+
+<br/>
+<table>
+  <tr>
+    <th>Total Test Cases</th>
+    <th>Bug Fix Tests</th>
+    <th>Security Tests</th>
+    <th>Positive Tests</th>
+    <th>Negative Tests</th>
+  </tr>
+  <tr>
+    <td style="text-align:center"><strong>21</strong></td>
+    <td style="text-align:center; background-color:#EDD9FF"><strong>6</strong></td>
+    <td style="text-align:center; background-color:#FFD7D7"><strong>6</strong></td>
+    <td style="text-align:center; background-color:#D7FFD7"><strong>7</strong></td>
+    <td style="text-align:center; background-color:#FFF3CD"><strong>3</strong></td>
+  </tr>
+</table>
+
+<br/><hr/>
+<p style="font-size:9pt; color:grey;">Document generated: May 14, 2026 | Hermes Onboarding Tool – ReportController.java Fixes | GitHub Copilot (assisted)</p>
+</body>
+</html>

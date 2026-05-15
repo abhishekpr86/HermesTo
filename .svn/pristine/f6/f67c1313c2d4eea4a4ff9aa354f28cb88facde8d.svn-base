@@ -1,0 +1,33 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.capgemini.onboarding.dao.RoleTechDao;
+import com.capgemini.onboarding.model.RoleTech;
+
+@Service
+public class RoleTechServiceImpl implements RoleTechService {
+
+	@Autowired
+	private RoleTechDao roleTechDao;
+	
+	@Override
+	@Transactional
+	public RoleTech getRoleTechId(int id) {
+		
+		return this.roleTechDao.getRoleTechId(id);
+	}
+
+	@Override
+	@Transactional
+	public List<RoleTech> listRoleTech() {
+		
+		return this.roleTechDao.listRoleTech();
+		
+	}
+
+}

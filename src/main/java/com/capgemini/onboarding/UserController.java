@@ -1,0 +1,413 @@
+package com.capgemini.onboarding;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.capgemini.onboarding.constants.OnboardingConstants;
+import com.capgemini.onboarding.dto.RoleDTO;
+import com.capgemini.onboarding.model.Employee;
+import com.capgemini.onboarding.model.Role;
+import com.capgemini.onboarding.model.UserRoles;
+import com.capgemini.onboarding.model.Users;
+import com.capgemini.onboarding.service.UsersService;
+import com.capgemini.onboarding.service.roleService;
+import com.capgemini.onboarding.util.CommonUtil;
+
+@Controller
+public class UserController {
+	       private Logger logger = Logger.getLogger(UserController.class);
+
+	    @Autowired(required = true)
+	       private UsersService usersService;
+	    
+	    @Autowired(required = true)
+		private roleService roleServicevar;
+	    
+	    private HttpSession session;
+	    private String role_id;
+	       
+		@RequestMapping(value = "/userSearchCriteria", method = RequestMethod.POST)  // edit user search button
+		public String searchEmployee(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+				@ModelAttribute("users") UserRoles users) {
+			List<UserRoles> userSearchList = usersService.searchhUsers(users);
+			
+			model.addAttribute("userSearchList", userSearchList);
+			// uncomment before deployment
+	/*	for (int i = 0; i < userSearchList.size(); i++) {
+			String roleName = userSearchList.get(i).getRole_id();
+			if (roleName.equalsIgnoreCase("1")) {
+				userSearchList.get(i).setRoleName("Admin");
+			}
+			else if (roleName.equalsIgnoreCase("2")) {
+				userSearchList.get(i).setRoleName("EM");
+			}
+			else if (roleName.equalsIgnoreCase("3")) {
+				userSearchList.get(i).setRoleName("Bundle EM");
+			}
+			else if (roleName.equalsIgnoreCase("4")) {
+				userSearchList.get(i).setRoleName("Read Only Users");
+			}
+			else if (roleName.equalsIgnoreCase("5")) {
+				userSearchList.get(i).setRoleName("User Management");
+			}
+			
+
+		}
+			*/	
+				
+
+			
+			if(userSearchList != null && userSearchList.size() <= 0) {
+				model.addAttribute("successMsg", "No Records found.");
+			}
+			//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+			session = request.getSession();
+			role_id = (String) session.getAttribute("RoleName");
+			if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+				model.addAttribute("checkUserType", "ViewMode");
+
+			}
+			else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			/*	emp.setUserManagement(true);*/
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+				}
+			
+			
+			return "searchUsers";
+		}
+	    
+	    
+		@RequestMapping(value = "/userSearch", method = RequestMethod.GET)
+		public String usersList(Model model, HttpServletRequest request) { // add role 
+			UserRoles userRole = new UserRoles();
+		
+		model.addAttribute("users", userRole); // user_roles
+		Employee e = new Employee();
+		 List<Role> roleList = roleServicevar.listRole();
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		session = request.getSession();
+		model.addAttribute("roleList", roleList);
+		role_id = (String) session.getAttribute("RoleName");
+		if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+			e.setUserReadOnly(true);
+			model.addAttribute("checkUserType", "ViewMode");
+
+		}
+		else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			e.setUserManagement(true);
+			model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+			}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			e.setEMReadOnly(true);//EM
+  			model.addAttribute("checkUserType", "BundleEM");
+  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+  			  
+  			model.addAttribute("checkUserType", "RM");
+  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+  			  
+  			model.addAttribute("checkUserType", "RM_PMO");
+  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.ASL)) {
+  			  model.addAttribute("checkUserType", "ASL"); 
+  		  }
+		
+		return "searchUsers";
+	}
+	    
+	    
+	    
+	    
+	       
+	   	@RequestMapping(value = "/userManagement/searchUser", method = RequestMethod.POST)
+		public String addUser(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,@ModelAttribute("users") Users users) { // add user
+			
+	   		
+	   		
+	   		
+	   		String password = users.getUserPassword(); 
+	   		if(password.equalsIgnoreCase("")){
+	   			users.setUserPassword(CommonUtil.getPasswordBcrypt("pass"));
+	   		}
+	   		else{
+	   		users.setUserPassword(CommonUtil.getPasswordBcrypt(users.getUserPassword()));
+	   		}
+	   		users.setEnabled(1);
+	   		users.setIsFirstLogin(true);
+	   		
+			this.usersService.addUsers(users);
+			redirectAttributes.addFlashAttribute("successMsg", "Users saved successfully : "+ users.getUserName());
+	   		
+			model.addAttribute("userList", users);
+			
+			Employee e = new Employee();
+			//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+			session = request.getSession();
+			role_id = (String) session.getAttribute("RoleName");
+			
+			if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+				e.setUserReadOnly(true);
+				model.addAttribute("checkUserType", "ViewMode");
+
+			}
+			else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+				e.setUserManagement(true);
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+				}
+			else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+				e.setEMReadOnly(true);//EM
+      			model.addAttribute("checkUserType", "BundleEM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+      			  
+      			model.addAttribute("checkUserType", "RM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+      			  
+      			model.addAttribute("checkUserType", "RM_PMO");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.ASL)) {
+      			  model.addAttribute("checkUserType", "ASL");
+      		  }
+			return "redirect:/userManagement";
+		
+		
+		}
+		
+		
+		@RequestMapping(value = "/userManagement", method = RequestMethod.GET)
+			public String addUserByRoleId(Model model, HttpServletRequest request) { // add user -- check again
+			Users users = new Users();
+			model.addAttribute("users", users);
+			
+			Employee e = new Employee();
+			//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+			session = request.getSession();
+			role_id = (String) session.getAttribute("RoleName");
+			
+			if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+				e.setUserReadOnly(true);
+				model.addAttribute("checkUserType", "ViewMode");
+
+			}
+			else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+				e.setUserManagement(true);
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+				}
+			else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+				e.setEMReadOnly(true);//EM
+      			model.addAttribute("checkUserType", "BundleEM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+      			  
+      			model.addAttribute("checkUserType", "RM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+      			  
+      			model.addAttribute("checkUserType", "RM_PMO");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.ASL)) {
+      			  model.addAttribute("checkUserType", "ASL");
+      		  }
+			
+			return "userForm";
+		}
+
+
+		@RequestMapping(value = "/checkUserExists", method = RequestMethod.GET)
+		public @ResponseBody boolean checkUserNameExists(
+				@RequestParam(value = "userName", required = true) String userName)
+		
+		{
+			String userNameHidden = null;
+			
+ 			boolean isUserExist = false;
+			if(userName!=null && !userName.equals("") ){
+				isUserExist = usersService.checkUserNameExists(userName,userNameHidden);		
+			}
+			return isUserExist;
+		}
+		
+	
+		@RequestMapping(value = "/checkUserExistsEdit", method = RequestMethod.GET)
+		public @ResponseBody boolean checkUserNameExistsEdit(
+				@RequestParam(value = "userName", required = true) String userName ,
+				@RequestParam(value = "userNamehidden", required = true) String userNameHidden)
+		
+		{
+			logger.info(userNameHidden);
+			
+			boolean isUserExist = false;
+			if(userName!=null && !userName.equals("") && userNameHidden!=null && !userNameHidden.equals("")){
+				isUserExist = usersService.checkUserNameExists(userName,userNameHidden);		
+			}
+			return isUserExist;
+		}
+
+		
+		@RequestMapping(value = "/users/{users}", method = RequestMethod.GET)
+		public String getUser(@PathVariable("users") String users, Model model, HttpServletRequest request) {
+			
+			//String username = userRole.getUserName();
+			UserRoles userRole = new UserRoles();
+			userRole.setUserName(users);
+			//usersService.deleteUserRole(users);
+			
+			//List<UserRoles> userSearchList = usersService.searchhUsers(users);
+			
+			//model.addAttribute("userSearchList", userSearchList);
+			
+			return "searchUsers";
+			/*Users users = new Users();
+			if(userId!=null && !userId.equalsIgnoreCase("")){
+				users = this.usersService.getUsersById(userId);
+			}
+			
+			Employee e = new Employee();
+		    //String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+			
+			session = request.getSession();
+			role_id = (String) session.getAttribute("RoleName");
+			
+			if(role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)){
+				e.setUserReadOnly(true);
+				model.addAttribute("checkUserType", "ViewMode");
+			}
+			
+			else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+				e.setUserManagement(true);
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+				}
+			else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+    			  
+      			model.addAttribute("checkUserType", "BundleEM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+      			  
+      			model.addAttribute("checkUserType", "RM");
+      		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+      			  
+      			model.addAttribute("checkUserType", "RM_PMO");
+      		  }
+			model.addAttribute("users",users);		
+			return "editUser";*/
+		}		
+		
+		
+		@RequestMapping(value = "/users/editUser", method = RequestMethod.POST)
+		public String editEmployee(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+				@ModelAttribute("users") UserRoles users) {
+			/*users.setUserPassword(CommonUtil.getPasswordBcrypt(users.getUserPassword()));*/
+	   		/*users.setEnabled(1);
+			this.usersService.updateUsers(users);
+			redirectAttributes.addFlashAttribute("successMsg", "Users saved successfully.");
+			model.addAttribute("users",users);	*/
+	
+			//usersService.deleteUserRole(users);
+			
+			
+			
+				
+			return "redirect:/userSearch";
+		}		
+		
+
+		/*@RequestMapping(value = "/deleteUserRole", method = RequestMethod.GET)
+		public @ResponseBody UserRoleDTO deleteUserRoleRec(			
+				@RequestParam(value = "id", required = true) int bundleEmId) {
+			UserRoleDTO userRoleDTO = new UserRoleDTO();
+			List<Bis> bisList = this.bisService.bisList(bundleEmId); 
+			bundleemdto.setBisList(bisList);
+			return bundleemdto;
+		}*/
+
+		//Bhavna - start
+		@RequestMapping(value = "/deleteUserRole", method = RequestMethod.POST)
+		public String deleteUserRole(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+				@ModelAttribute("userRole") UserRoles userRole) {
+			
+			//delete user role combo.
+			this.usersService.deleteUserRole(userRole);
+			redirectAttributes.addFlashAttribute("successMsg", "Users Role deleted successfully : "+userRole.getUserName());
+			//OPEN VIEW ROLE PAGE
+			/*List<UserRoles> userSearchList = usersService.searchhUsers(userRole);
+			
+			model.addAttribute("userSearchList", userSearchList);*/
+			
+			model.addAttribute("users",userRole);
+			
+			return "redirect:/userSearch";
+		}
+		
+		//Bhavna - end
+		
+		
+		//Not tested - bhavna - Friday
+		@RequestMapping(value = "/checkRoleList", method = RequestMethod.GET)
+		public @ResponseBody RoleDTO addRoleListForUser(			
+				@RequestParam(value = "username", required = true) String username) {
+			
+			RoleDTO roledto = new RoleDTO();
+			List<Role> addRoleList = this.usersService.addRoleList(username);
+			roledto.setAddRoleList(addRoleList);
+			return roledto;
+		}
+		
+		@RequestMapping(value = "/addRole", method = RequestMethod.GET)
+		public String addRole(Model model, HttpServletRequest request) { // add role 
+			UserRoles userRole = new UserRoles();
+		
+			model.addAttribute("users", userRole); 
+			session = request.getSession();
+			role_id = (String) session.getAttribute("RoleName");
+			if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+				//e.setUserReadOnly(true);
+				model.addAttribute("checkUserType", "ViewMode");
+
+			}
+			else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+				//e.setUserManagement(true);
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+				}
+			else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+				  
+	  			model.addAttribute("checkUserType", "BundleEM");
+	  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+	  			  
+	  			model.addAttribute("checkUserType", "RM");
+	  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+	  			  
+	  			model.addAttribute("checkUserType", "RM_PMO");
+	  		  }else if(role_id.equalsIgnoreCase(OnboardingConstants.ASL)) {
+      			  model.addAttribute("checkUserType", "ASL");
+      		  }
+			return "addUserRole";
+		}
+		
+		///addRoleToUserRoles
+		@RequestMapping(value = "/addRoleToUserRoles", method = RequestMethod.POST)
+		public String addRoleToUserRoles(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+				@ModelAttribute("userRole") UserRoles userRole) {
+			
+			this.usersService.addUserRole(userRole);
+			
+			model.addAttribute("users",userRole);
+			redirectAttributes.addFlashAttribute("successMsg", "Users Role added successfully : "+userRole.getUserName()+" - "+userRole.getRole_id().getRole_name());
+			return "redirect:/userSearch";
+		}
+
+		//Not tested - bhavna
+		
+		
+}

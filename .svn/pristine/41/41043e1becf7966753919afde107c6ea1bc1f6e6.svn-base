@@ -1,0 +1,80 @@
+username: SVC-FR-HERMESACCOUNT@capgemini.com
+password: n9giejA8CY42Q4
+from: donotreply@capgemini.com
+host: gmr10.capgemini.com
+port: 25
+testMailId: ''
+testSheduleMailId: ''
+template:
+
+    P001NN4:
+            subject: PSA HERMES ~emailNo~ – Your PSA ID
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font>Hi ~firstName~, 
+                  <br/><br/><b>This mail is about your PSA-ID.<br/><br/>
+                     <b>Your credentials:-</b><br/><br/><html><body><table style='border:1px solid black'><table border=1><tr>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FamilyName(Nom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FirstName(Prénom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>Location</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>PCA ID</th></tr><tr><td style='background-color:rgb(249, 211, 17)'>~lastName~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~firstName~</td><td style='background-color:rgb(249, 211, 17)'>~location~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~psaId~</td></tr></table>
+                     </body></html><br/><br/><span style='color:rgb(28, 67, 113);'>By default, the temporary password is composed by :</span><br/><br/>
+                     <span style='color:rgb(28, 67, 113);'>1st letter of first name (Upper Case)</span></br><span style='color:rgb(28, 67, 113);'>
+                     1st letter of last name (Lower case)</span></br><span style='color:rgb(28, 67, 113);'>Birthday (MMDDYY)</span><br/><br/>
+                      <b>Best Regards,</b><br/><b>HERMES PMO Team <a href:mailto:pmohermes.in@capgemini.com>(pmohermes.in@capgemini.com)</a> 
+                     </b></font></span></font></div>
+            from: harmes	 		
+    P001NN3:
+            subject: PSA HERMES ~emailNo~ – Your PSA ID
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font>Hi ~firstName~, 
+                  <br/><br/><b>To work on PSA environment, you have a Virtual Machine (VM), named 'PSALib', and credentials on PSA infrastructure. 
+                     </b><br/><br/>This mail is about your PSA-ID. Virtual Machine (VM) creation is in progress. You will receive an additional mail when your VM is ready.<br/><br/>
+                     <b>Your credentials:-</b><br/><br/><html><body><table style='border:1px solid black'><table border=1><tr>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FamilyName(Nom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:180px;color:white;'>FirstName(Prénom)</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>Location</th>
+                     <th style='background-color:rgb(16, 144, 208);width:100px;color:white;'>PCA ID</th></tr><tr><td style='background-color:rgb(249, 211, 17)'>~lastName~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~firstName~</td><td style='background-color:rgb(249, 211, 17)'>~location~</td>
+                     <td style='background-color:rgb(249, 211, 17)'>~psaId~</td></tr></table>
+                     </body></html><br/><br/><span style='color:rgb(28, 67, 113);'>By default, the temporary password is composed by :</span><br/><br/>
+                     <span style='color:rgb(28, 67, 113);'>1st letter of first name (Upper Case)</span></br><span style='color:rgb(28, 67, 113);'>
+                     1st letter of last name (Lower case)</span></br><span style='color:rgb(28, 67, 113);'>Birthday (MMDDYY)</span><br/><br/>
+                      <b>Best Regards,</b><br/><b>HERMES PMO Team <a href:mailto:pmohermes.in@capgemini.com>(pmohermes.in@capgemini.com)</a> 
+                     </b></font></span></font></div>
+            from: harmes
+    P001NN2:
+            subject: Onboarding of ~FirstName~ ~LastName~ on ~BIS~
+            body: Hello<br>
+                  Please be informed that the onboarding process has started for ~FirstName~ ~LastName~ on ~BIS~.<br>
+                   <br>
+                   Requestor - ~Requestor~ <br>
+                   <br>
+                   Manager - ~mgnr~ <br>
+                   <br>
+                   EM  - ~EM~<br>
+                   <br>
+                   BEM - ~BEM~<br>
+                   <br>
+                   Onboarding date - ~onbdate~<br>
+                   <br>
+                   Planned offboarding date - ~pdate~<br>
+                   <br>
+                   Location - ~loc~ <br>  
+                   <br>
+                   <br>
+                   <br>
+                    Best Regards,<br>
+                    Onboarding Tool Team.<br>
+                                
+            from: harmes 5
+            
+    HERMES:
+            subject: Welcome to HERMES PSA
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font><table style='border:#857d7d 1px solid' align='center'><tbody><tr><td style=width:0.50;><img src=\"cid:image1\" width=\"50%\" height=\"25%\" /></td></tr><tr><td style=width:0.50;></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">Hi ~firstName~,</td></tr><tr><td style=width:0.50;></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">Welcome to HERMES Program !</td></tr><tr><td style=width:0.50;></td>  </tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">Click <a href=https://frparvm39353055.corp.capgemini.com/mymoodle/my/><b>here</b></a> to learn more about automotive sector, our client PSA and HERMES Program.</td></tr><tr><td style=width:0.50;></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">Your onboarding journey will last 4 hours. Following this journey is mandatory to make your integration into the HERMES Program successful. </td></tr><tr><td style=width:0.50;>  </td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">Please note that you need a VPN connection if you are outside Capgemini's network.</td></tr><tr><td style=width:0.50;></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\">We're pleased to have you onboard and wish you a great journey on HERMES!</td></tr><tr><td style=width:0.50;>  </td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\"><b>Kind Regards,</b></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\"><b>HERMES Knowledge Management Team </b></td></tr><tr><td style=\"width:0.50; font-family:Calibri,sans-serif; font-size:14px;\"><a href=mailto:hermesonboardingspoc.fr@capgemini.com>hermesonboardingspoc.fr@capgemini.com</a> </td></tr><tr><td style=width:0.50;></td></tr><tr><td style=width:0.50;><img src=\"cid:image2\" width=\"50%\" height=\"25%\" /></td></tr></tbody></table></font></span></font></div>
+            from: hermes
+            
+            
+    OPEL:
+            subject: PSA OPEL Welcome email – please read carefully
+            body: <div><font face=Calibri,sans-serif> <span style=font-size:11pt><font color=#1F497D></font>Hi ~firstName~, <br/><br/><b>Welcome to Opel. Hope you will have a great time working with us. Welcome aboard new buddy!</b><br/><br/>You will find below useful link to access <b>various templates which will enable you to track the KT sessions</b>, as well as tools used on Opel and procedures to follow. Please read it carefully and contact your direct manager if you have any questions.<br/><br/><a href=https://e-3d-jira.capgemini.com/confluence/display/HERK/Problem+Solver>KT-Kit Link </a><br/><br/>Also, do not hesitate to contact the PMO / Domain Service Delivery Leads who will be pleased to help you as much as s/he can:<br/><br/><ul><li>PMO - Vidya Joshi</li><li>Manufacturing & SC Domain SDM - Manish Lokhande</li><li>Engineering Domain SDM - Chhaya Shinde</li><li>Sales & After sales Domain SDM - Kartik Iyer</li></ul><br/>You also need to complete the below mandatory trainings.  Please connect with your PMO in case of any doubts.<br/><br/><ol><li>ITIL Training</li><li>CHROME training</li><li>Process Training</li><li>Transition kick off session - Classroom Training (happens once a month</li></ol><br/>You also need to ensure if the below is in place in order to take delivery commitments.<br/><ol><li>Sharepoint access for all 3 entities GM, OV, CG - Please send an email to vidya.joshi@capgemini.com</li><li>Sharepoint access for Opel and CG - Please send an email to vidya.joshi@capgemini.com</li><li>GM ID creation - Please send an email to vidya.joshi@capgemini.com with the details of your DOB. <a href=http://sp2013-intern.ce.capgemini.com/CGD/Auto/OpelPSA/GMOV/Shared Documents/On Boarding Documents/User guide for activating the GMID.pptx>Please activate the GM ID within 1 week from the day you get the ID</a></li><li>Laptop Request - Please raise a request in India Service Desk.</li><li><a href=http://sp2013-intern.ce.capgemini.com/CGD/Auto/OpelPSA/GMOV/Shared Documents/On Boarding Documents/OV Acceleration Network connectivity v1.0.docx>Remote desktop connectivity</a></li><li><a href=http://sp2013-intern.ce.capgemini.com/CGD/Auto/OpelPSA/GMOV/Shared Documents/On Boarding Documents/ITSM_Access and update user role.docx> Access to ITSM - Request to be raised in IT catalogue.</a></li><li>Adding name to the Opel DLs - Ensure your name is added in respective DL as per your Domain. Please write to vidya.joshi@capgemini.com</li></ol><br/><br/>Thanks & regards,<br/>Opel PMO team<br/><br/></div>
+            from: hermes

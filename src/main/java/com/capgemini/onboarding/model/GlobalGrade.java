@@ -1,0 +1,108 @@
+package com.capgemini.onboarding.model;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.io.*; 
+import java.util.*;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+import org.hibernate.envers.Audited;
+
+@Entity
+@Table(name="GLOBALGRADE")
+@Audited
+public class GlobalGrade  implements java.io.Serializable, Comparable<GlobalGrade> {
+	
+	private Integer globalGradeId;	
+	private String name;	
+	private Integer order;	
+	//private Set<Employee> employees;	
+	private Set<Training> trainings = new HashSet<Training>(0);
+	
+	/**//**
+	 * @return the employees
+	 *//*
+	@OneToMany(mappedBy="grade")
+	public Set<Employee> getEmployees() {
+		return employees;
+	}
+
+	*//**
+	 * @param employees the employees to set
+	 *//*
+	public void setEmployees(Set<Employee> employees) {
+		this.employees = employees;
+	}
+*/
+
+	@Column(name="global_grade_name", nullable=false)
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	@Column(name="global_grade_order", nullable=false)
+	public Integer getOrder() {
+		return order;
+	}
+
+	public void setOrder(Integer order) {
+		this.order = order;
+	}
+
+	@ManyToMany(fetch = FetchType.LAZY, mappedBy = "grades")
+	public Set<Training> getTrainings() {
+		return trainings;
+	}
+
+	public void setTrainings(Set<Training> trainings) {
+		this.trainings = trainings;
+	}
+
+	/**
+	 * @return the globalGradeId
+	 */
+	@Id
+	@Column(name="global_grade_id", nullable=false)
+	@GeneratedValue
+	public Integer getGlobalGradeId() {
+		return globalGradeId;
+	}
+
+	/**
+	 * @param globalGradeId the globalGradeId to set
+	 */
+	public void setGlobalGradeId(Integer globalGradeId) {
+		this.globalGradeId = globalGradeId;
+	}
+	
+	@Override
+	public boolean equals (Object obj) {
+		
+		if(obj == null || obj.getClass()!= this.getClass()) {
+			return false;
+		}
+		GlobalGrade globalGrade = (GlobalGrade) obj; 
+        if (this.getName().equals(globalGrade.getName())) {
+        	return true;
+        }else {
+        	return false;
+        }
+        
+    }
+
+	@Override
+	public int compareTo(GlobalGrade globalGrade) {
+		return this.getName().compareTo(globalGrade.getName());
+	}
+}

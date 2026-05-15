@@ -1,0 +1,1042 @@
+package com.capgemini.onboarding;
+
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.SearchResult;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.apache.log4j.Logger;
+import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+//import com.aspose.cells.a.c.co;
+import com.capgemini.onboarding.activedirectory.ActiveDirectory;
+import com.capgemini.onboarding.constants.OnboardingConstants;
+import com.capgemini.onboarding.dto.BundleEmDTO;
+import com.capgemini.onboarding.dto.CountriesDTO;
+import com.capgemini.onboarding.dto.EmailDTO;
+import com.capgemini.onboarding.dto.EmployeeDTO;
+import com.capgemini.onboarding.mail.MailSender;
+import com.capgemini.onboarding.mail.MailUtility;
+import com.capgemini.onboarding.model.Bis;
+import com.capgemini.onboarding.model.Employee;
+import com.capgemini.onboarding.model.EmployeeRoles;
+import com.capgemini.onboarding.model.EmployeeTraining;
+import com.capgemini.onboarding.model.EmployeeType;
+import com.capgemini.onboarding.model.Grade;
+import com.capgemini.onboarding.model.ResourceManager;
+import com.capgemini.onboarding.model.Spoc;
+import com.capgemini.onboarding.model.State;
+import com.capgemini.onboarding.model.Training;
+import com.capgemini.onboarding.model.Vendor;
+import com.capgemini.onboarding.service.BisService;
+import com.capgemini.onboarding.service.BundleEmService;
+import com.capgemini.onboarding.service.CgEntityService;
+import com.capgemini.onboarding.service.CountryService;
+import com.capgemini.onboarding.service.EmployeeRoleService;
+import com.capgemini.onboarding.service.EmployeeService;
+import com.capgemini.onboarding.service.EntityService;
+import com.capgemini.onboarding.service.GlobalGradeService;
+import com.capgemini.onboarding.service.GradeService;
+import com.capgemini.onboarding.service.OffshoreEmService;
+import com.capgemini.onboarding.service.PrimaryProgramService;
+import com.capgemini.onboarding.service.ResourceManagerService;
+import com.capgemini.onboarding.service.SpocService;
+import com.capgemini.onboarding.service.StateService;
+import com.capgemini.onboarding.service.TechnologyService;
+import com.capgemini.onboarding.service.TrainingService;
+import com.capgemini.onboarding.service.VendorService;
+import com.capgemini.onboarding.util.PsaMailUtility;
+
+
+
+@Controller
+public class EmployeeController {
+
+	private Logger logger = Logger.getLogger(EmployeeController.class);
+	
+	private static final DateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+	@Autowired
+	private SessionFactory sessionFactory;
+
+	@Autowired(required = true)
+	private EmployeeService employeeService;
+
+	@Autowired(required = true)
+	private GradeService gradeService;
+
+	@Autowired(required = true)
+	private TechnologyService technologyService;
+
+	@Autowired(required = true)
+	private CountryService countryService;
+
+	@Autowired(required = true)
+	private StateService stateService;
+
+	@Autowired(required = true)
+	private EmployeeRoleService employeeroleservice;
+	
+	@Autowired(required = true)
+	private VendorService vendorService;
+
+	@Autowired(required = true)
+	private SpocService spocService;
+
+	@Autowired(required = true)
+	private GlobalGradeService globalGradeService;
+
+	@Autowired(required = true)
+	private TrainingService trainingService;
+	
+	@Autowired(required = true)
+	private EntityService entityService;
+
+	@Autowired(required = true)
+	private CgEntityService cgEntityService;
+	
+	@Autowired(required = true)
+	private OffshoreEmService offshoreEmService;
+	
+	@Autowired
+	private BundleEmService bundleEmService;
+	
+	@Autowired(required = true)
+	private ResourceManagerService resourceMgrService;
+	
+	@Autowired(required = true)
+	private BisService bisService;
+	
+	@Autowired(required = true)
+	private PrimaryProgramService primaryProgramService;
+	
+	private HttpSession session;
+	private String role_id;
+	
+    @Autowired(required = true)
+    private PsaMailUtility psaMailUtility;
+	
+	private List<EmployeeRoles> EmployeeRolesList;
+
+	@RequestMapping(value = { /*"/", */"/employees" }, method = RequestMethod.GET)
+	public String listEmployees(Model model, HttpServletRequest request) {
+
+		Employee e = new Employee();
+		
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		session = request.getSession();
+		role_id = (String) session.getAttribute("RoleName");
+		
+		if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+			e.setUserReadOnly(true);
+			model.addAttribute("checkUserType", "ViewMode");
+		}
+
+		else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			e.setUserManagement(true);
+			model.addAttribute("checkUserTypeforUM", "UserManagement");
+		}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+			
+			model.addAttribute("checkUserType", "RM");
+			
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			
+ 			model.addAttribute("checkUserType", "BundleEM");
+ 		}else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+ 			  
+ 			model.addAttribute("checkUserType", "RM_PMO");
+ 		}
+		
+		
+		model.addAttribute("employee", e);
+		model.addAttribute("listPrimaryProgram",this.primaryProgramService.listPrimaryProgram());
+		model.addAttribute("listEmployees", this.employeeService.listManagers());
+		model.addAttribute("listEmployeesByBundleEm",this.employeeService.listManagersByBundleEm());
+		model.addAttribute("listEmployeesByEm",this.employeeService.listManagersByEm());
+		model.addAttribute("listOffshoreEmIndia",this.employeeService.listOffshoreEmIndia());
+		//model.addAttribute("listGrades", this.gradeService.listGrades());
+		model.addAttribute("listEmployeeRoles", this.getEmployeeRolesList()); //Employee Roles
+		model.addAttribute("listGlobalGrades", this.globalGradeService.listGlobalGrades());
+		model.addAttribute("listCountry", this.countryService.listCountry());
+		model.addAttribute("listTechnology", this.technologyService.listTechnology());
+		model.addAttribute("listEntity", this.entityService.listEntity());
+		model.addAttribute("listCgEntity", this.cgEntityService.listCgEntity());
+		model.addAttribute("listOffshoreEm",this.offshoreEmService.listOffshoreEm());
+		model.addAttribute("listBundleEm", this.bundleEmService.listBundleEm());
+		List<Employee> employeeList = employeeService.getAllEmployees();
+		List<Employee> empList = employeeService.modifyEmployeeList(employeeList);
+		List<Bis> fullListOfBis = this.bisService.fullListOfBis();
+		model.addAttribute("fullListOfBis",fullListOfBis);
+		model.addAttribute("employeeList", empList);
+		
+		
+		
+		return "addEmployee";
+	}
+
+	@RequestMapping(value = "/states", method = RequestMethod.GET)
+	public @ResponseBody CountriesDTO statesForCountry(			
+			@RequestParam(value = "countryId", required = true) int countryId) {
+		CountriesDTO countriesDTO = new CountriesDTO();
+		List<State> stateList = this.stateService.listState(countryId);
+		List<Vendor> vendorList = this.vendorService.listVendor(countryId);
+		List<Grade> gradeList = this.gradeService.listGrades(countryId);
+		List<ResourceManager> resourceMgrList = this.resourceMgrService.listResourceManager(countryId);
+		Spoc spoc = this.spocService.fetchSpoc(countryId);
+		countriesDTO.setStateList(stateList);
+		countriesDTO.setVendorList(vendorList);
+		countriesDTO.setSpoc(spoc);
+		countriesDTO.setGradeList(gradeList);
+		countriesDTO.setResourceMgrList(resourceMgrList);
+		return countriesDTO;
+	}
+	
+	@RequestMapping(value = "/bis", method = RequestMethod.GET)
+	public @ResponseBody BundleEmDTO bisValue(			
+			@RequestParam(value = "id", required = true) int bundleEmId) {
+		BundleEmDTO bundleemdto = new BundleEmDTO();
+		List<Bis> bisList = this.bisService.bisList(bundleEmId); 
+		bundleemdto.setBisList(bisList);
+		return bundleemdto;
+	}
+	
+	
+	
+	
+	
+	@RequestMapping(value = "/checkEmployeeExists", method = RequestMethod.GET)
+	public @ResponseBody boolean checkEmployeeExists(
+			@RequestParam(value = "empId", required = true) String empId,
+			@RequestParam(value = "extrnalSelectn", required = true) boolean  extrnalSelectn,
+			@RequestParam(value = "internalSelectn", required = true) boolean internalSelectn)
+	
+	{
+		boolean isEmployeeExist = false;
+		if(empId!=null && !empId.equals("")){
+				if(extrnalSelectn){
+					isEmployeeExist = employeeService.checkEmployeeExists(empId , "External" );
+				}
+				else if(internalSelectn){
+					isEmployeeExist = employeeService.checkEmployeeExists(empId , "Internal");
+				}
+			 		
+		}
+
+		return isEmployeeExist;
+	}
+	
+	
+	@RequestMapping(value = "/checkCorpIdExists", method = RequestMethod.GET)
+	public @ResponseBody boolean checkCorpIdExists(
+			@RequestParam(value = "corpId", required = true) String corpId) throws NamingException
+	
+	{
+		Employee empDetailsFromAD = new Employee();
+		String empType= null;
+		String txtPSAID = null;
+		boolean isEmployeeExist = false;
+		if(corpId!=null && !corpId.equals("")){
+			 isEmployeeExist = employeeService.checkCorpIdExists(corpId,txtPSAID,empType,"add");		
+		}
+		
+			
+  		return isEmployeeExist;
+	}
+	
+	@RequestMapping(value = "/checkCorpIdExistsEdit", method = RequestMethod.GET)
+	public @ResponseBody boolean checkCorpIdExistsEdit(
+			@RequestParam(value = "corpId", required = true) String corpId , @RequestParam(value = "txtPSAID", required = true) String txtPSAID,
+			@RequestParam(value = "empType", required = true) String empType,@RequestParam(value = "txthiddenCorpID", required = true) String txthiddenCorpID)
+
+	{
+		boolean isEmployeeExist = false;
+		if(corpId.equalsIgnoreCase(txthiddenCorpID)){
+			logger.info("This is the existing corp Id for the edited resource");
+		}
+		else{
+			if(corpId!=null && !corpId.equals("")){
+				if(empType.equalsIgnoreCase("Internal")){
+					 isEmployeeExist = employeeService.checkCorpIdExists(corpId,txtPSAID,"Internal",txthiddenCorpID);
+				}
+				else
+				{
+					 isEmployeeExist = employeeService.checkCorpIdExists(corpId,txtPSAID,"External",txthiddenCorpID);		
+				}		
+			}
+		}
+	
+		return isEmployeeExist;
+	}
+
+
+	@RequestMapping(value = "/checkPsaIdExists", method = RequestMethod.GET)
+	public @ResponseBody boolean checkPsaIdExists(
+			@RequestParam(value = "psaId", required = true) String psaId)
+	
+	{
+		String empType = null;
+		String txtPSAID = null;
+		boolean isEmployeeExist = false;
+		if(psaId!=null && !psaId.equals("")){
+			if(!psaId.equalsIgnoreCase("No PSA id")) {
+				
+			 isEmployeeExist = employeeService.checkPsaIDExists(psaId,txtPSAID,empType);	
+			 
+			}
+		}
+		return isEmployeeExist;
+	}
+	
+	
+	@RequestMapping(value = "/checkPsaIdExistsEdit", method = RequestMethod.GET)
+	public @ResponseBody boolean checkPsaIdExistsEdit(
+		   @RequestParam(value = "psaId", required = true) String psaId,
+	       @RequestParam(value = "txtPSAID", required = true) String txtPSAID,
+	       @RequestParam(value = "empType", required = true) String empType)
+	
+	
+	{
+		boolean isEmployeeExist = false;
+		if(psaId!=null && !psaId.equals("")){
+			if(!psaId.equalsIgnoreCase("No PSA id")) {
+				if(empType.equalsIgnoreCase("Internal")){
+				 isEmployeeExist = employeeService.checkPsaIDExists(psaId,txtPSAID,"Internal");		
+				}
+			
+				else{
+				 isEmployeeExist = employeeService.checkPsaIDExists(psaId,txtPSAID,"External");
+				
+				}
+			}
+		}
+		return isEmployeeExist;
+	}
+	
+	@RequestMapping(value = "/checkEmployeeEmailExists", method = RequestMethod.GET)
+	public @ResponseBody boolean checkEmployeeEmailExists(
+			@RequestParam(value = "email", required = true) String email)
+			
+	
+	{
+		String empType = null;
+		String txtPSAID = null;
+		boolean isEmployeeExist = false;
+		if(email!=null && !email.equals("")){
+			
+			 isEmployeeExist = employeeService.checkEmployeeEmailExists(email,txtPSAID,empType);		
+		}
+		return isEmployeeExist;
+	}
+	
+	
+	
+	@RequestMapping(value = "/checkEmployeeEmailExistsEdit", method = RequestMethod.GET)
+	public @ResponseBody boolean checkEmployeeEmailExistsEdit(
+		   @RequestParam(value = "email", required = true) String email,
+   		   @RequestParam(value = "txtPSAID", required = true) String txtPSAID,
+   		   @RequestParam(value = "empType", required = true) String empType)
+	
+	{
+		
+		boolean isEmployeeExist = false;
+		if(email!=null && !email.equals("")){
+			isEmployeeExist = employeeService.checkEmployeeEmailExists(email,txtPSAID,empType);	
+		}
+			
+		return isEmployeeExist;
+	}
+	
+	
+	
+
+	@RequestMapping(value = { "/managers" }, method = RequestMethod.GET)
+	@ResponseBody
+	public List<Employee> listManegers() {
+		return this.employeeService.listManagers();
+	}
+
+	public List<Employee> listManagersByBundleEm(){
+	return this.employeeService.listManagersByBundleEm();	
+	}
+	
+	public List<Employee> listManagersByEm(){
+		return this.employeeService.listManagersByBundleEm();	
+	}
+	
+	// For add and update employee both
+	@RequestMapping(value = "/employee/add", method = RequestMethod.POST)
+	public String addEmployee(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+			@ModelAttribute("employee") Employee emp) {
+		
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		
+		session = request.getSession();
+		role_id = (String) session.getAttribute("RoleName");
+		
+		if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+			emp.setUserReadOnly(true);
+			model.addAttribute("checkUserType", "ViewMode");
+		}else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			emp.setUserManagement(true);
+			model.addAttribute("checkUserTypeforUM", "UserManagement");
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+			
+			model.addAttribute("checkUserType", "RM");
+			
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			
+ 			model.addAttribute("checkUserType", "BundleEM");
+ 		}else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+ 			  
+ 			model.addAttribute("checkUserType", "RM_PMO");
+ 		}	
+	
+
+		
+		// new employee, add it
+		try {
+			/*String docPath = "http://" + InetAddress.getLocalHost().getHostAddress() + ":" + request.getServerPort()
+					+ request.getContextPath() + "/resourceView/" + emp.getId() + "/";*/
+			String docPath = "http://frparhermesto/HERMES_Academy/learning.html";
+			List<Training> trainingList = trainingService.getTrainingList(emp.getGrade().getGradeId());
+
+			List<EmployeeTraining> employeeTrainingList = new ArrayList<>();
+			for (Training t : trainingList) {
+				EmployeeTraining et = new EmployeeTraining();
+				et.setTraining(t);
+				et.setEmployee(emp);
+				et.setAllocationDate(new Date());
+				employeeTrainingList.add(et);
+			}
+
+			emp.setEmployeeTrainings(employeeTrainingList);
+			
+			if(emp.getEmpType().equals(EmployeeType.External.toString())){
+				emp.setPsaId(emp.getEmpId());
+				emp.setEmpId(emp.getExternalEmpId());
+			}
+			final String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+			emp.setCreatedBy(loggedUser);
+			Date date = new Date();
+			
+			emp.setCreationdate(date);
+			this.employeeService.addEmployee(emp);
+			redirectAttributes.addFlashAttribute("successMsg", "Resource on-boarding data saved successfully.");
+			List<Employee> employeeList = employeeService.getAllEmployees();
+			List<Employee> empList = employeeService.modifyEmployeeList(employeeList);
+			model.addAttribute("employeeList", empList);
+			String subject = "Welcome to HERMES";
+		
+			if(emp.getCountry().getCountryId().equals(2) && emp.getEmpType().equalsIgnoreCase("Internal")){  // welcome mail to the resource - India 
+				MailSender.send(psaMailUtility.prepareMailId(emp.getEmail()), MailUtility.createEmailBody(emp.getFirstName(), docPath,
+				emp.getSpoc().getSpocName(), emp.getSpoc().getSpocEmail()), subject);		
+			}
+			
+			if((emp.getCountry().getCountryId().equals(1) /*|| emp.getCountry().getCountryId().equals(4) || emp.getCountry().getCountryId().equals(5)*/ ) && emp.getEmpType().equalsIgnoreCase("Internal")){ // welcome mail to the resource 
+				//MailSender.send(emp.getEmail(), MailUtility.createEmailForFrance(emp.getFirstName(), docPath,emp.getSpoc().getSpocName(), emp.getSpoc().getSpocEmail()), subject);
+			}
+			
+/*			if(emp.getCountry().getCountryId()!=null){ // Mail to all in BIS
+				String title = "Welcome to " + emp.getFirstName();
+				String startDate = null;
+				emp.setOnboardingDate(startDate);
+				if (emp.getJoiningDate() != null) {
+					startDate = OnboardingConstants.DATE_FORMAT.format(emp.getJoiningDate());
+					}
+				emp.setOnboardingDate(startDate);
+				List<Employee> mailToPeers = employeeService.emailForIndiaEmployee(emp.getCountry().getCountryId(), emp.getBis().getBis_id(),emp.getLocation().getStateId(),emp.getCorpId());
+			logger.info(mailToPeers);
+				if(mailToPeers!= null && mailToPeers.size() > 0){
+					//for(int i=0; i<mailToPeers.size(); i++){
+						MailSender.createEmailBodyForAll(mailToPeers,emp, MailUtility.createEmailBodyForAll(docPath,"All",emp.getFirstName(),emp.getLastName(),emp.getBis().getBis_Name(),startDate), title);
+						
+					//}
+					
+				}
+				
+			}*/
+			
+			
+			
+		} catch (DataIntegrityViolationException e) {
+			redirectAttributes.addFlashAttribute("errorMsg", "Resource entry already exists.");
+			model.addAttribute("employee", emp);
+			return "redirect:/employees";
+		} catch (MessagingException e) {
+			logger.error("Exceptions in addEmployee " + e.getMessage(), e);
+			redirectAttributes.addFlashAttribute("errorMsg", "Error while sending mail.");
+			model.addAttribute("employee", emp);
+			return "redirect:/employees";
+		}catch (Exception e) {
+			logger.error("Exceptions in addEmployee " + e.getMessage(), e);
+			redirectAttributes.addFlashAttribute("errorMsg", "Error while saving employee.");
+			model.addAttribute("employee", emp);
+			return "redirect:/employees";
+		}
+		// existing employee, call update
+
+		/*return "redirect:/employees";*/
+		return "redirect:/allResourceList";
+	}
+
+	@RequestMapping("/remove/{id}")
+	public String removeEmployee(@PathVariable("id") int id) {
+		this.employeeService.removeEmployee(id);
+		return "redirect:/employees";
+	}
+
+	@RequestMapping(value = "/employee/{id}/{pageName}", method = RequestMethod.GET)
+	public String getEmployee(@PathVariable("id") Long id,@PathVariable("pageName") String pageName, Model model, HttpServletRequest request) {
+		
+		Employee emp = this.employeeService.getEmployeeById(id);
+		logger.info(pageName);
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		session = request.getSession();
+		role_id = (String) session.getAttribute("RoleName");
+		if(role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)){
+			emp.setUserReadOnly(true);
+			model.addAttribute("checkUserType", "ViewMode");
+		}
+
+		else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			emp.setUserManagement(true);
+			model.addAttribute("checkUserTypeforUM", "UserManagement");
+
+			}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+			
+			model.addAttribute("checkUserType", "RM");
+			
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			
+ 			model.addAttribute("checkUserType", "BundleEM");
+ 		}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+			Employee employee = this.employeeService.getEmpForRmPMO(id);	
+			model.addAttribute("employee", employee);
+			model.addAttribute("checkUserType", "RM_PMO");
+			return "RmPMO";	
+		}
+		
+		if(emp.getEmpType().equals(EmployeeType.External.toString())){
+			emp.setExternalEmpId(emp.getEmpId());
+			emp.setEmpId(emp.getPsaId());
+		}
+		
+		if(emp.getPhase() == 0){
+			emp.setPhase(1);
+		}
+		
+	
+		model.addAttribute("employee", emp);
+		model.addAttribute("listPrimaryProgram",this.primaryProgramService.listPrimaryProgram());
+		model.addAttribute("listCountry", this.countryService.listCountry());
+		model.addAttribute("listTechnology", this.technologyService.listTechnology());
+		model.addAttribute("listEmployees", this.employeeService.listManagers());
+		model.addAttribute("listEmployeesByBundleEm",this.employeeService.listManagersByBundleEm());
+		model.addAttribute("listEmployeesByEm",this.employeeService.listManagersByEm());
+		model.addAttribute("listOffshoreEmIndia",this.employeeService.listOffshoreEmIndia());
+		model.addAttribute("listEmployeeRoles", this.getEmployeeRolesList()); //Employee Roles
+		model.addAttribute("listGrades", this.gradeService.listGrades(emp.getCountry().getCountryId()));
+		model.addAttribute("listGlobalGrades", this.globalGradeService.listGlobalGrades());
+		model.addAttribute("listEntity", this.entityService.listEntity());
+		model.addAttribute("listCgEntity", this.cgEntityService.listCgEntity());
+		model.addAttribute("listOffshoreEm",this.offshoreEmService.listOffshoreEm());
+		model.addAttribute("listBundleEm", this.bundleEmService.listBundleEm());
+		List<Bis> fullListOfBis = this.bisService.fullListOfBis();
+		model.addAttribute("fullListOfBis",fullListOfBis);
+		if(pageName.equalsIgnoreCase("dataInconsistencyPage")){
+			model.addAttribute("CheckReportType","dataInconsistencyPage");
+		}
+		/*if(pageName.equalsIgnoreCase("orphanMgrPage")){
+			model.addAttribute("CheckReportTypeOM", "orphanMgrPage");
+		}*/
+		else{
+			model.addAttribute("CheckReportType",null);
+		}
+		
+		
+		
+		return "editEmployee";
+	}
+
+	@RequestMapping(value = "/employee/edit", method = RequestMethod.POST)
+	public String editEmployee(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+			@ModelAttribute("employee") Employee emp) {
+		Employee e = employeeService.getEmployeeById(emp.getId());
+		Date actualEndDate = e.getActualEndDate();
+		Date updatedActualDate = emp.getActualEndDate();
+		
+		
+		if(emp.getEmpType().equals(EmployeeType.External.toString())){
+			emp.setPsaId(emp.getEmpId());
+			emp.setEmpId(emp.getExternalEmpId());
+		}
+		if(actualEndDate!=null){
+			emp.setActualEndDate(actualEndDate);
+		}
+		// Bhavna - Since Local is null for all countries except India, foolowing checkis required.
+		if(e.getGrade() != null) {
+			
+			Integer existingGrade = e.getGrade().getGradeId();
+			if (existingGrade != emp.getGrade().getGradeId()) {
+				List<Training> trainingList = trainingService.getTrainingList(emp.getGrade().getGradeId());
+				List<EmployeeTraining> employeeTrainingList = new ArrayList<>();
+				for (Training t : trainingList) {
+					EmployeeTraining et = new EmployeeTraining();
+					et.setTraining(t);
+					et.setEmployee(emp);
+					et.setAllocationDate(new Date());
+					employeeTrainingList.add(et);
+				}
+				emp.setEmployeeTrainings(employeeTrainingList);
+			}
+		}
+		final String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+		emp.setCreatedBy(loggedUser);
+		Date date = new Date();
+		java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+		emp.setCreationdate(sqlDate);
+		try {
+/*			boolean checkEmployeeExist = this.employeeService.updateEmployee(emp);
+			if (checkEmployeeExist) {
+				redirectAttributes.addFlashAttribute("errorMsg",
+						"The same resource is already present with overlapping dates. Please enter non-overlapping dates");
+			} else */
+				
+				this.employeeService.updateEmployee(emp);
+				if ((updatedActualDate != null && actualEndDate == null)
+						|| (updatedActualDate != null && updatedActualDate.compareTo(actualEndDate) != 0)) {
+
+					String actualEndDateStr = null;
+					String updatedActualDateStr = null;
+					if (actualEndDate != null) {
+						actualEndDateStr = OnboardingConstants.DATE_FORMAT.format(actualEndDate);
+					}
+					if (updatedActualDate != null) {
+						updatedActualDateStr = OnboardingConstants.DATE_FORMAT.format(updatedActualDate);
+					}
+					redirectAttributes.addFlashAttribute("successMsg", "Resource on-boarding data saved successfully.");
+					String empDetails = emp.getFirstName() + " " + emp.getLastName() + " ( ID: " + emp.getEmpId()
+							+ " )";
+					String managerDetails = emp.getManager().getFirstName();
+					String msgSubject = "Off-boarding date change notification for " + empDetails;
+					/*try {
+						MailSender.send(emp.getManager().getEmail(), MailUtility.createOffboardingEmailBody(empDetails,
+								managerDetails, actualEndDateStr, updatedActualDateStr), msgSubject);
+						MailSender.send(e.getSpoc().getSpocEmail(), MailUtility.createOffboardingEmailBody(empDetails,
+								e.getSpoc().getSpocName(), actualEndDateStr, updatedActualDateStr), msgSubject);
+
+					} catch (MessagingException me) {
+						logger.error("Exceptions in addEmployee " + me.getMessage(), me);
+						redirectAttributes.addFlashAttribute("errorMsg", "Error while sending mail.");
+						model.addAttribute("employee", emp);
+						return "redirect:/employees";
+					}*/
+
+				}
+				
+				redirectAttributes.addFlashAttribute("successMsg", "Resource on-boarding data saved successfully.");
+			//}
+				
+		} catch (Exception exception) {
+			logger.error("Exceptions in updateEmployee " + exception.getMessage(), exception);
+			redirectAttributes.addFlashAttribute("errorMsg", "Error while updating record.");
+			model.addAttribute("employee", emp);
+			return "redirect:/allResourceList";
+		}
+		return "redirect:/allResourceList";
+	}
+
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		sdf.setLenient(true);
+		binder.registerCustomEditor(Date.class, new CustomDateEditor(sdf, true));
+	}
+	
+	@RequestMapping(value = {"/allResourceList" }, method = RequestMethod.GET)
+	public String resourceList(Model model, HttpServletRequest request) {
+
+		Employee e = new Employee();
+		model.addAttribute("employee", e);
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		
+		session = request.getSession();
+		role_id = (String) session.getAttribute("RoleName");
+		
+		if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+			e.setUserReadOnly(true);
+			model.addAttribute("checkUserType", "ViewMode");
+		   }
+
+		else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+			e.setUserManagement(true);
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+			}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+			
+			model.addAttribute("checkUserType", "RM");
+			
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			
+ 			model.addAttribute("checkUserType", "BundleEM");
+ 			
+ 		}else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+ 			  
+ 			model.addAttribute("checkUserType", "RM_PMO");
+ 		}
+		return "allResourceList";
+	}
+	
+	@RequestMapping(value = "/empSearchCriteria", method = RequestMethod.POST)
+	public String searchEmployee(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes,
+			@ModelAttribute("employee") Employee emp) {
+		List<Employee> employeeSearchList = employeeService.searchEmployees(emp);
+		List<Employee> empList = employeeService.modifyEmployeeList(employeeSearchList);
+		model.addAttribute("employeeList", empList);
+		
+		for(int j=0; j < empList.size(); j++){
+			int phase = empList.get(j).getPhase();
+			if(phase==1){
+				empList.get(j).setPhasevalue("AppsTwo Delivery");
+			}
+			if(phase==2){
+				empList.get(j).setPhasevalue("Transition");
+			}
+			if(phase==3){
+				empList.get(j).setPhasevalue("AppsTwo Governance");
+			}
+			if(phase == 4){
+				empList.get(j).setPhasevalue("Loaned-In");
+			}
+		}
+		
+		for(int i=0 ; i <empList.size() ; i++){
+			int heritgTypevlaue = empList.get(i).getHeritageType();
+			boolean decisionValByGPVzalue = empList.get(i).isDecisionValByGP();
+			if(decisionValByGPVzalue)
+			{
+				empList.get(i).setDecisionVal("Yes");
+			}else{
+				empList.get(i).setDecisionVal("No");
+			}
+			
+			if(heritgTypevlaue==1){
+				empList.get(i).setHeritageValue("Capgemini");
+			}
+			else if(heritgTypevlaue==2){
+				empList.get(i).setHeritageValue("FR HERMES");
+			}
+			else if(heritgTypevlaue==3){
+				empList.get(i).setHeritageValue("Others");
+			}
+			
+			
+			
+			Bis bis = empList.get(i).getBis();
+			if(bis!=null){
+				int bisId = empList.get(i).getBis().getBis_id();
+				if(bisId==1){
+					bis.setBis_Name("");
+					empList.get(i).setBis(bis);
+			}
+			
+			}
+		}
+		
+		if(employeeSearchList != null && employeeSearchList.size() <= 0) {
+			model.addAttribute("successMsg", "No Records found.");
+		}
+		//String role_id = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
+		session = request.getSession();
+		role_id = (String) session.getAttribute("RoleName");
+		if (role_id.equalsIgnoreCase(OnboardingConstants.ReadOnlyUsers)) {
+			model.addAttribute("checkUserType", "ViewMode");
+		    }
+		
+
+		else if (role_id.equalsIgnoreCase(OnboardingConstants.UserManagement)) {
+				model.addAttribute("checkUserTypeforUM", "UserManagement");
+			}
+		else if(role_id.equalsIgnoreCase(OnboardingConstants.RM)) {
+			
+			model.addAttribute("checkUserType", "RM");
+			
+		}else if(role_id.equalsIgnoreCase(OnboardingConstants.Bundle_EM)) {
+			
+ 			model.addAttribute("checkUserType", "BundleEM");
+ 		}else if(role_id.equalsIgnoreCase(OnboardingConstants.RM_PMO)) {
+ 			  
+ 			model.addAttribute("checkUserType", "RM_PMO");
+ 		}
+		return "allResourceList";
+	}
+	
+	
+	@RequestMapping(value = "/getDetailsByCorpIDFromActiveDirectory", method = RequestMethod.GET)
+	public @ResponseBody EmployeeDTO getDetailsFromActiveDirectory(
+			@RequestParam(value = "corpId", required = true) String corpId) throws NamingException {
+		
+		//Session session = this.sessionFactory.getCurrentSession();
+		EmployeeDTO employeeDTO = new EmployeeDTO();
+		boolean corpIdExits = false;
+		corpIdExits = checkCorpIdExists(corpId);
+		if(corpIdExits){
+			employeeDTO.setFirstName("");
+			employeeDTO.setLastName("");
+			employeeDTO.setEmail("");
+			logger.info("corpId already exits");
+		}
+		
+		else{
+		  ActiveDirectory activeDirectory = new ActiveDirectory("SVC-IN-HERMESMUM","Tdbj@3020","corp.capgemini.com");
+		  NamingEnumeration<SearchResult> result;
+		try {
+			result = activeDirectory.searchUser(corpId,"username",null);
+			if(result.hasMoreElements()) {
+				  
+				SearchResult rs= (SearchResult)result.next();
+				Attributes attrs = rs.getAttributes();
+				if(attrs!=null){
+					  
+				    
+					String temp = attrs.get("samaccountname").toString();
+					logger.info("Username:" + temp.substring(temp.indexOf(":")+1));
+					
+					if(attrs.get("givenname") != null && attrs.get("givenname").get(0) != null){
+						temp = attrs.get("givenname").get(0).toString();
+						logger.info("Name         :" + temp.substring(temp.indexOf(":")+1).trim());
+						employeeDTO.setFirstName(temp.substring(temp.indexOf(":")+1).trim());	
+					}
+					
+				
+					if(attrs.get("sn") != null && attrs.get("sn").get(0) != null){
+					temp = attrs.get("sn").get(0).toString();
+					logger.info("sn	:" + temp.substring(temp.indexOf(":")+1));
+					employeeDTO.setLastName(temp.substring(temp.indexOf(":")+1).trim());
+					}
+					
+					if(attrs.get("mail") != null && attrs.get("mail").get(0) != null){
+						temp = attrs.get("mail").get(0).toString();
+						logger.info("Email ID	:" + temp.substring(temp.indexOf(":")+1));
+						employeeDTO.setEmail(temp.substring(temp.indexOf(":")+1).trim());
+					}
+					else temp = "";
+					
+				}
+				
+			
+				
+			} else  {
+				logger.info("No search result found!");
+				employeeDTO.setFirstName(null);
+				employeeDTO.setLastName(null);
+				employeeDTO.setEmail(null);
+				logger.info(employeeDTO);
+				logger.info("corpId not exits in active directory");
+			}
+		   activeDirectory.closeLdapConnection();
+		}
+		
+		
+		catch (NamingException e) {
+			String roleId = SecurityContextHolder.getContext().getAuthentication().toString();
+			String loggedInUser = SecurityContextHolder.getContext().getAuthentication().getName();
+		logger.info(loggedInUser);
+/*			TypedQuery<Employee> query = session.createNamedQuery("getLoggedUserID");
+			query.setParameter("corpID",loggedInUser);
+			Long loggedUserID = query.getResultList().get(0).getId();
+			logger.info(loggedInUser);*/
+		logger.info("The logged in user  is" + loggedInUser);
+			e.getExplanation();
+			logger.error(" Some Problem occurs :- "+e.getMessage());
+		}
+		}
+		  
+		   return employeeDTO;
+		}
+
+
+
+	@RequestMapping(value = "/getDetailsByCorpIDFromActiveDirectoryExits", method = RequestMethod.GET)
+	public @ResponseBody EmployeeDTO getDetailsFromActiveDirectoryExits(
+			@RequestParam(value = "corpId", required = true) String corpId , @RequestParam(value = "txtPSAID", required = true) String txtPSAID,
+			@RequestParam(value = "empType", required = true) String empType,@RequestParam(value = "txthiddenCorpID", required = true) String txthiddenCorpID)
+            {
+		
+		//Session session = this.sessionFactory.getCurrentSession();
+		EmployeeDTO employeeDTO = new EmployeeDTO();
+		boolean corpIdExits = false;
+		corpIdExits = checkCorpIdExistsEdit(corpId, txtPSAID, empType, txthiddenCorpID);
+		if(corpIdExits){
+			employeeDTO.setFirstName("");
+			employeeDTO.setLastName("");
+			employeeDTO.setEmail("");
+		//	employeeDTO.setFirstName("");
+			logger.info("corpId already exits");
+		}
+		else {
+		  ActiveDirectory activeDirectory = new ActiveDirectory("SVC-IN-HERMESMUM","Tdbj@3020","corp.capgemini.com");
+		  NamingEnumeration<SearchResult> result;
+		try {
+			result = activeDirectory.searchUser(corpId,"username",null);
+			 if(result.hasMoreElements()) {
+					SearchResult rs= (SearchResult)result.next();
+					Attributes attrs = rs.getAttributes();
+					if(attrs!=null){
+					  
+						    
+						String temp = attrs.get("samaccountname").toString();
+						logger.info("Username:" + temp.substring(temp.indexOf(":")+1));
+						
+						if(attrs.get("givenname") != null && attrs.get("givenname").get(0) != null){
+							temp = attrs.get("givenname").get(0).toString();
+							logger.info("Name         :" + temp.substring(temp.indexOf(":")+1).trim());
+							employeeDTO.setFirstName(temp.substring(temp.indexOf(":")+1).trim());	
+						}
+						
+					
+						if(attrs.get("sn") != null && attrs.get("sn").get(0) != null){
+						temp = attrs.get("sn").get(0).toString();
+						logger.info("sn	:" + temp.substring(temp.indexOf(":")+1));
+						employeeDTO.setLastName(temp.substring(temp.indexOf(":")+1).trim());
+						}
+						
+						if(attrs.get("mail") != null && attrs.get("mail").get(0) != null){
+							temp = attrs.get("mail").get(0).toString();
+							logger.info("Email ID	:" + temp.substring(temp.indexOf(":")+1));
+							employeeDTO.setEmail(temp.substring(temp.indexOf(":")+1).trim());
+						}
+						
+						
+						else temp = "";
+						
+					}
+					
+					
+				} else  {
+					logger.info("No search result found!");
+					employeeDTO.setFirstName(null);
+					employeeDTO.setLastName(null);
+					employeeDTO.setEmail(null);
+					logger.info("corpId not exits in active directory");
+				}
+			   activeDirectory.closeLdapConnection();
+			  
+		} catch (NamingException e) {
+			String role_value = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString(); 
+			String loggedUser = SecurityContextHolder.getContext().getAuthentication().getName();
+			
+		/*	TypedQuery<Employee> query1 =session.createNamedQuery("getLoggedUserID");
+			 query1.setParameter("corpID", loggedUser); 
+			 Long loggedUserID = query1.getResultList().get(0).getId();*/
+			logger.info(loggedUser);
+			logger.error(" Some Problem occurs :- "+e.getMessage());
+		}
+	}
+	return employeeDTO;
+	}
+	@Transactional
+	@RequestMapping(value = "/employee/updatePSAID", method = RequestMethod.POST)
+	public String updatePSAID(Model model,HttpServletRequest request, RedirectAttributes redirectAttributes,
+			@ModelAttribute("employee") Employee emp) {
+		
+		try {
+					this.employeeService.updatePSAID(emp);
+					if((emp.getPsaId() != null && (!emp.getPsaId().equalsIgnoreCase("NO PSA ID"))) && !"".equalsIgnoreCase(emp.getPsaId())) { // No mail
+							if(emp.getVmNumber().isEmpty()) {
+								EmailDTO emaildto = new EmailDTO();
+								ArrayList<String> toList = new ArrayList<String>();
+								ArrayList<String> ccLists =new ArrayList<String>();
+								HashMap<String,String> paramValue = new HashMap<>(); 
+								
+								String firstname = emp.getFirstName();
+								String lastname = emp.getLastName();
+								String location = emp.getLocation().getStateName();
+								/*String vmnumber= emp.getVmNumber();*/
+								String pcaid = emp.getPsaId();
+								String psamail = emp.getPCAEmail();
+								
+								paramValue.put("firstName",firstname);
+								paramValue.put("lastName",lastname);
+								paramValue.put("location",location);
+/*								paramValue.put("vmNumber",vmnumber);
+*/								paramValue.put("psaId",pcaid);
+								paramValue.put("PCAEmail",psamail);
+								paramValue.put("MAILTEMPID","P001NN3");
+								paramValue.put("emailNo", "#2");
+								
+								String empemail = emp.getEmail();
+								toList.add(empemail);
+								ccLists.add(empemail);
+								emaildto.setToList(toList);
+								emaildto.setCcList(ccLists);
+								emaildto.setParamValue(paramValue);
+								
+								psaMailUtility.senMail(emaildto);
+							}else {
+								//String subject = "Welcome Email -- "+emp.getFirstName()+" "+emp.getLastName();
+								String subject = "PSA HERMES Welcome email #3 – please read carefully";
+								Map<String, String> inlineImages = new HashMap<String, String>();
+								if(emp.getPrimaryprogram().getPrimaryProgramName().equalsIgnoreCase("OPEL")) {
+									MailSender.sendImageMail(psaMailUtility.prepareMailId(emp.getEmail()), MailUtility.OPELWelcomeEmail2(emp.getFirstName()), subject, inlineImages);
+								}else {
+									MailSender.sendImageMail(psaMailUtility.prepareMailId(emp.getEmail()), MailUtility.createWelcomeMail(emp), subject, inlineImages);
+							
+								}	
+
+							if(emp.getRequestor() != null) {
+								String requestorSubj = emp.getFirstName()+" "+emp.getLastName() +" (" +emp.getCorpId() +") – Onboarding completed ";
+								MailSender.send(psaMailUtility.prepareMailId(emp.getRequestor().getEmail()),MailUtility.createRequestorMail(emp), requestorSubj);	
+							}
+					}
+				redirectAttributes.addFlashAttribute("successMsg", "Resource on-boarding data saved successfully.");
+					}	
+		} catch (Exception exception) {
+			logger.error("Exceptions in updateEmployee " + exception.getMessage(), exception);
+			redirectAttributes.addFlashAttribute("errorMsg", "Error while updating record.");
+			model.addAttribute("employee", emp);
+			return "redirect:/allResourceList";
+		}
+		return "redirect:/allResourceList";
+	}
+	
+	
+	public List<EmployeeRoles> getEmployeeRolesList() {
+		if(this.EmployeeRolesList == null) {
+			this.EmployeeRolesList = this.employeeroleservice.listEmployeeRoles();
+		}
+		return this.EmployeeRolesList;
+	}
+}
+

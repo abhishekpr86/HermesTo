@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Unit Test Case Document – Hermes Onboarding Tool Phase 1</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 40px; color: #1a1a1a; }
+  h1 { font-size: 18pt; color: #1F3864; border-bottom: 3px solid #1F3864; padding-bottom: 6px; }
+  h2 { font-size: 14pt; color: #2E5496; margin-top: 30px; border-bottom: 2px solid #2E5496; padding-bottom: 4px; }
+  h3 { font-size: 12pt; color: #1F3864; margin-top: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 10pt; }
+  th { background-color: #2E5496; color: white; padding: 8px 10px; text-align: left; }
+  td { border: 1px solid #BBBBBB; padding: 7px 10px; vertical-align: top; }
+  tr:nth-child(even) { background-color: #EEF2F7; }
+  .pass { color: green; font-weight: bold; }
+  .fail { color: red; font-weight: bold; }
+  .section-box { background-color: #F0F4FA; border-left: 5px solid #2E5496; padding: 10px 15px; margin: 10px 0 18px 0; }
+  .code { font-family: Consolas, monospace; background-color: #F4F4F4; padding: 2px 6px; border-radius: 3px; font-size: 10pt; }
+  .tag-security { background-color: #FFD7D7; color: #8B0000; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-positive { background-color: #D7FFD7; color: #006400; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-negative { background-color: #FFF3CD; color: #856404; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .tag-build { background-color: #D0E8FF; color: #003580; padding: 2px 7px; border-radius: 3px; font-size: 9pt; font-weight: bold; }
+  .meta-table td { border: none; padding: 4px 10px; }
+  .meta-table tr:nth-child(even) { background-color: white; }
+  p { line-height: 1.6; }
+  ul { line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<h1>Unit Test Case Document</h1>
+<table class="meta-table">
+  <tr><td><strong>Project</strong></td><td>Hermes Onboarding Tool</td><td><strong>Version</strong></td><td>1.0.0-BUILD-SNAPSHOT</td></tr>
+  <tr><td><strong>Phase</strong></td><td>Phase 1 – Security Fixes</td><td><strong>Date</strong></td><td>May 14, 2026</td></tr>
+  <tr><td><strong>Prepared By</strong></td><td>GitHub Copilot (assisted)</td><td><strong>Environment</strong></td><td>Java 8, Spring 4.3.30, Tomcat 9</td></tr>
+</table>
+
+<hr/>
+
+<h2>1. Overview</h2>
+<p>
+This document describes the unit test cases for all changes made during <strong>Phase 1 – Security Fixes</strong> of the Hermes Onboarding Tool modernisation project.
+The following files were changed and require testing:
+</p>
+<ul>
+  <li><span class="code">UserManagementDaoImpl.java</span> – SQL Injection fix</li>
+  <li><span class="code">CommonUtil.java</span> – Password logging removed, MD5 method removed</li>
+  <li><span class="code">MoodleController.java</span> – Race condition fix, Path Traversal fix, Hardcoded path fix</li>
+  <li><span class="code">log4j.properties</span> – Hardcoded log path fix</li>
+  <li><span class="code">pom.xml</span> – Spring Security version corrected, Spring Framework unified, Compiler warnings enabled</li>
+  <li><span class="code">spring-security.xml</span> – Schema version corrected</li>
+</ul>
+
+<hr/>
+
+<!-- ============================================================ -->
+<h2>2. Test Area 1 – SQL Injection Fix</h2>
+<h3>File: <span class="code">UserManagementDaoImpl.java</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  The <span class="code">changeUserPassword()</span> method previously built SQL queries by directly concatenating the username and password values into the query string. This allowed an attacker to inject malicious SQL code through the input fields.<br/><br/>
+  <strong>Before (vulnerable):</strong><br/>
+  <span class="code">"select password from users where username = '" + username + "'"</span><br/><br/>
+  <strong>After (fixed):</strong><br/>
+  <span class="code">session.createNativeQuery("SELECT password FROM users WHERE username = :username").setParameter("username", username)</span><br/><br/>
+  <strong>How it works:</strong> The database driver treats the value of <span class="code">username</span> as pure data, never as SQL syntax. Even if an attacker types <span class="code">' OR '1'='1</span>, the database will look for a user literally named <span class="code">' OR '1'='1</span> and find none.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-01</td>
+    <td>Valid user, correct old password</td>
+    <td>User "john" exists in DB with BCrypt password</td>
+    <td>username="john", oldPassword="Pass@1", newPassword="NewPass@1"</td>
+    <td>1. Mock SessionFactory<br/>2. Mock query to return BCrypt hash of "Pass@1"<br/>3. Call changeUserPassword("john","NewPass@1","Pass@1")<br/>4. Check return value</td>
+    <td>Returns 1 (one row updated)</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-02</td>
+    <td>Valid user, wrong old password</td>
+    <td>User "john" exists in DB</td>
+    <td>username="john", oldPassword="WrongPass", newPassword="NewPass@1"</td>
+    <td>1. Mock query to return hash of "Pass@1"<br/>2. Call changeUserPassword("john","NewPass@1","WrongPass")<br/>3. Check return value</td>
+    <td>Returns 0 — password not changed</td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-03</td>
+    <td>Username does not exist</td>
+    <td>No user "ghost" in DB</td>
+    <td>username="ghost", oldPassword="any", newPassword="any"</td>
+    <td>1. Mock query to return null<br/>2. Call changeUserPassword("ghost","any","any")<br/>3. Check return value</td>
+    <td>Returns 0 — storedPassword is null, method exits early</td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-04</td>
+    <td>SQL Injection in username field</td>
+    <td>Database is running</td>
+    <td>username="' OR '1'='1", oldPassword="any"</td>
+    <td>1. Pass malicious SQL string as username<br/>2. Verify actual SQL sent to DB uses a bind parameter<br/>3. Verify no rows are unexpectedly returned</td>
+    <td>Query returns null (no user found). Returns 0. No SQL injected into query.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-05</td>
+    <td>SQL Injection in password field</td>
+    <td>Valid user exists</td>
+    <td>newPassword="'; DROP TABLE users;--"</td>
+    <td>1. Pass injection string as newPassword<br/>2. Verify DB stores BCrypt hash of the literal string<br/>3. Verify users table still exists</td>
+    <td>BCrypt hash stored (starts with $2a$). users table intact. No SQL executed.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-06</td>
+    <td>New password is stored as BCrypt hash</td>
+    <td>Valid user with correct old password</td>
+    <td>newPassword="MySecurePass@1"</td>
+    <td>1. Execute a valid password change<br/>2. Read the stored password value from DB</td>
+    <td>Stored value starts with <span class="code">$2a$</span>. Never stored as plaintext.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>3. Test Area 2 – Password Logging Removed</h2>
+<h3>File: <span class="code">CommonUtil.java</span> – <span class="code">getPasswordBcrypt()</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  The method previously logged the raw plaintext password to the log file before hashing it.<br/><br/>
+  <strong>Before (vulnerable):</strong><br/>
+  <span class="code">logger.info("getPasswordBcrypt password :" + password);</span><br/><br/>
+  <strong>After (fixed):</strong><br/>
+  The line above was removed entirely.<br/><br/>
+  <strong>How it works:</strong> Without the logger line, the password is never written to any log file. Even if an attacker gains read access to the log file (<span class="code">onboard.log</span>), they will find no passwords there.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-07</td>
+    <td>getPasswordBcrypt returns valid BCrypt hash</td>
+    <td>None</td>
+    <td>password="Test@123"</td>
+    <td>1. Call CommonUtil.getPasswordBcrypt("Test@123")<br/>2. Check the returned string</td>
+    <td>Returns a 60-character string starting with <span class="code">$2a$</span></td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-08</td>
+    <td>Plaintext password NOT written to log</td>
+    <td>Log file configured and writable</td>
+    <td>password="Secret@999"</td>
+    <td>1. Set up a log appender that captures log output<br/>2. Call CommonUtil.getPasswordBcrypt("Secret@999")<br/>3. Search log output for "Secret@999"</td>
+    <td>Log output contains NO occurrence of "Secret@999". Password is never logged.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-09</td>
+    <td>Two different calls produce different hashes</td>
+    <td>None</td>
+    <td>Same password="Test@123" called twice</td>
+    <td>1. Call getPasswordBcrypt("Test@123") twice<br/>2. Compare both returned hashes</td>
+    <td>Both hashes are different (BCrypt uses a random salt per call)</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>4. Test Area 3 – MD5 Method Removed</h2>
+<h3>File: <span class="code">CommonUtil.java</span> – <span class="code">getPasswordMD5()</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  The <span class="code">getPasswordMD5()</span> method was removed entirely from <span class="code">CommonUtil</span>.<br/><br/>
+  <strong>Why MD5 is dangerous for passwords:</strong> MD5 hashes are extremely fast to compute — a modern GPU can check billions of MD5 hashes per second. This makes MD5-hashed passwords trivially crackable using brute force or rainbow tables. BCrypt is intentionally slow and includes a salt, making it the correct choice.<br/><br/>
+  <strong>After (fixed):</strong> The method no longer exists. All password hashing uses <span class="code">BCryptPasswordEncoder</span>.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-10</td>
+    <td>getPasswordMD5 method no longer exists</td>
+    <td>CommonUtil class is compiled</td>
+    <td>N/A</td>
+    <td>1. Use Java Reflection:<br/><span class="code">CommonUtil.class.getDeclaredMethod("getPasswordMD5", String.class)</span></td>
+    <td>Throws <span class="code">NoSuchMethodException</span> — method has been removed</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-11</td>
+    <td>comparePassword works correctly with BCrypt</td>
+    <td>None</td>
+    <td>oldPassword="Test@123", storedPassword=BCrypt hash of "Test@123"</td>
+    <td>1. Generate hash: <span class="code">hash = getPasswordBcrypt("Test@123")</span><br/>2. Call <span class="code">CommonUtil.comparePassword("Test@123", hash)</span></td>
+    <td>Returns <span class="code">true</span></td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-12</td>
+    <td>comparePassword rejects wrong password</td>
+    <td>None</td>
+    <td>oldPassword="WrongPass", storedPassword=BCrypt hash of "Test@123"</td>
+    <td>1. Generate hash: <span class="code">hash = getPasswordBcrypt("Test@123")</span><br/>2. Call <span class="code">CommonUtil.comparePassword("WrongPass", hash)</span></td>
+    <td>Returns <span class="code">false</span></td>
+    <td><span class="tag-negative">NEGATIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>5. Test Area 4 – Race Condition Fix (Moodle Controller)</h2>
+<h3>File: <span class="code">MoodleController.java</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  Three instance-level variables were removed from the controller class:<br/>
+  <span class="code">private String absolutePath;</span><br/>
+  <span class="code">private HttpSession session;</span><br/>
+  <span class="code">private String role_id;</span><br/><br/>
+  <strong>Why this is a problem:</strong> Spring creates only ONE instance of each controller and shares it across all HTTP requests. If 100 users are logged in at the same time, they all share the same controller object. If User A's request sets <span class="code">role_id = "ADMIN"</span> and then User B's request immediately changes it to <span class="code">role_id = "VIEWER"</span>, User A's code may now execute with the wrong role — this is a race condition and a privilege escalation risk.<br/><br/>
+  <strong>After (fixed):</strong> <span class="code">session</span> and <span class="code">role_id</span> are declared as local variables inside each method. Local variables exist only for the duration of that single request and are never shared.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-13</td>
+    <td>No shared instance variables in MoodleController</td>
+    <td>MoodleController class is compiled</td>
+    <td>N/A</td>
+    <td>1. Use Java Reflection to get all declared fields of MoodleController<br/>2. Check that no field is named <span class="code">session</span>, <span class="code">role_id</span>, or <span class="code">absolutePath</span></td>
+    <td>None of those field names exist as instance variables</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-14</td>
+    <td>Concurrent requests use independent sessions</td>
+    <td>Tomcat running, 2 test users with different roles</td>
+    <td>User A: role=ADMIN, User B: role=VIEWER simultaneously</td>
+    <td>1. Send concurrent GET /moodleUserEnrol from 2 sessions<br/>2. Capture role_id resolved for each request<br/>3. Verify each request sees its own role</td>
+    <td>User A's request always resolves role_id=ADMIN. User B's resolves VIEWER. No cross-contamination.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>6. Test Area 5 – Path Traversal Prevention</h2>
+<h3>File: <span class="code">MoodleController.java</span> – <span class="code">downloadFile()</span> and <span class="code">downloadFiles()</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  Two layers of protection were added to the <span class="code">downloadFile()</span> and <span class="code">downloadFiles()</span> methods:<br/><br/>
+  <strong>Layer 1 – Regex check:</strong><br/>
+  <span class="code">private static final Pattern SAFE_FILENAME = Pattern.compile("[\\w\\-\\.]+");</span><br/>
+  Only letters, digits, underscores, hyphens, and dots are allowed. Any other character immediately returns HTTP 400.<br/><br/>
+  <strong>Layer 2 – Canonical path check:</strong><br/>
+  Even if a filename passes the regex, the resolved file path is checked to confirm it stays inside the system temp directory. This prevents symlink-based bypass attacks.<br/><br/>
+  <strong>Why path traversal is dangerous:</strong> If a filename like <span class="code">../../WEB-INF/web.xml</span> is accepted without validation, the server will read and send the contents of <span class="code">web.xml</span> (which contains DB passwords) to the attacker.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input (filename)</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-15</td>
+    <td>Valid filename is served correctly</td>
+    <td>File "Moodle-Enrolment.csv" exists in tmpdir</td>
+    <td>file="Moodle-Enrolment.csv"</td>
+    <td>1. Create test file in tmpdir<br/>2. Call GET /downloadFile/Moodle-Enrolment.csv<br/>3. Check response status and body</td>
+    <td>HTTP 200. File contents streamed in response body.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-16</td>
+    <td>Path traversal with ../ blocked</td>
+    <td>None</td>
+    <td>file="../../etc/passwd"</td>
+    <td>1. Call GET /downloadFile/../../etc/passwd<br/>2. Check response status</td>
+    <td>HTTP 400 Bad Request. File is NOT read.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-17</td>
+    <td>Path traversal with Windows separator blocked</td>
+    <td>None</td>
+    <td>file="..\..\ windows\system32\cmd.exe"</td>
+    <td>1. Call GET /downloadFile/ with Windows path separator<br/>2. Check response status</td>
+    <td>HTTP 400 Bad Request. Blocked by SAFE_FILENAME regex.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-18</td>
+    <td>Filename with special characters blocked</td>
+    <td>None</td>
+    <td>file="&lt;script&gt;alert(1)&lt;/script&gt;"</td>
+    <td>1. Pass script tag as filename<br/>2. Check response status</td>
+    <td>HTTP 400 Bad Request. &lt; and &gt; are not in the allowed character set.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-19</td>
+    <td>Filename with null byte blocked</td>
+    <td>None</td>
+    <td>file="file%00.csv"</td>
+    <td>1. Pass URL-encoded null byte in filename<br/>2. Check response status</td>
+    <td>HTTP 400 Bad Request.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+  <tr>
+    <td>TC-20</td>
+    <td>File outside tmpdir blocked (canonical check)</td>
+    <td>Symlink or encoded path that bypasses regex</td>
+    <td>Canonical path resolves outside tmpdir</td>
+    <td>1. Craft a filename that passes regex but resolves outside tmpdir via canonical path<br/>2. Check response status</td>
+    <td>HTTP 403 Forbidden. Canonical path check blocks the request.</td>
+    <td><span class="tag-security">SECURITY</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>7. Test Area 6 – Hardcoded File Path Removed</h2>
+<h3>File: <span class="code">MoodleController.java</span> – <span class="code">createFile()</span> and <span class="code">createMoodleReportFile()</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  <strong>Before:</strong> Files were written to <span class="code">new File("Moodle-Enrolment.csv")</span> (relative path — unpredictable location) and <span class="code">"C:/OnboardingToolExport/"</span> (Windows-only path that may not exist).<br/><br/>
+  <strong>After:</strong> All file creation uses <span class="code">System.getProperty("java.io.tmpdir")</span> which is the OS-provided temporary directory. On Windows this is <span class="code">C:\Users\&lt;user&gt;\AppData\Local\Temp</span>, on Linux it is <span class="code">/tmp</span>.<br/><br/>
+  <strong>Why this matters:</strong> The application must run on any server (dev, test, production, cloud). A hardcoded Windows path like <span class="code">C:/OnboardingToolExport/</span> will crash the application on Linux. A relative path resolves to wherever Tomcat was launched from, which is unpredictable.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-21</td>
+    <td>createFile writes to system tmpdir</td>
+    <td>Tomcat running</td>
+    <td>Call GET /createFile</td>
+    <td>1. Call /createFile endpoint<br/>2. Check the returned filename path<br/>3. Verify file exists in System.getProperty("java.io.tmpdir")</td>
+    <td>File created at <span class="code">&lt;tmpdir&gt;\Moodle-Enrolment.csv</span>. No relative or C:/ path used.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-22</td>
+    <td>No hardcoded Windows path in source</td>
+    <td>Source code available</td>
+    <td>N/A</td>
+    <td>1. Search MoodleController.java for "C:/" or "C:\\"<br/>2. Confirm zero occurrences</td>
+    <td>Zero occurrences of any hardcoded drive letter path</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-23</td>
+    <td>createFile endpoint returns correct filename</td>
+    <td>Tomcat running, resourceCohortService returns data</td>
+    <td>Call GET /createFile</td>
+    <td>1. Call /createFile<br/>2. Check response body text</td>
+    <td>Response body equals <span class="code">Moodle-Enrolment.csv</span></td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>8. Test Area 7 – Log File Hardcoded Path Fixed</h2>
+<h3>File: <span class="code">log4j.properties</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  <strong>Before:</strong> <span class="code">log4j.appender.file.File=C:/work/psa/onboarding/logs/onboard.log</span><br/>
+  <strong>After:</strong> <span class="code">log4j.appender.file.File=${catalina.home}/logs/onboard.log</span><br/><br/>
+  <strong>How it works:</strong> <span class="code">${catalina.home}</span> is a system property set automatically by Tomcat at startup pointing to the Tomcat installation directory (e.g., <span class="code">C:\Abhishek P R\Servers\apache-tomcat-9.0.115</span>). This means the log file will always be written to the correct Tomcat logs folder on any machine, without any hardcoded path.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-24</td>
+    <td>Log file created in Tomcat logs directory</td>
+    <td>Tomcat running, app deployed</td>
+    <td>Trigger any loggable action (e.g., login)</td>
+    <td>1. Start Tomcat<br/>2. Navigate to the login page<br/>3. Check &lt;CATALINA_HOME&gt;\logs\ for onboard.log</td>
+    <td>File <span class="code">onboard.log</span> exists under Tomcat logs directory and contains log entries</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+  <tr>
+    <td>TC-25</td>
+    <td>No hardcoded C:/work path in log4j.properties</td>
+    <td>Source file available</td>
+    <td>N/A</td>
+    <td>1. Open log4j.properties<br/>2. Search for "C:/work"</td>
+    <td>Zero occurrences of <span class="code">C:/work</span></td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>9. Test Area 8 – Spring Security Schema Version Fixed</h2>
+<h3>File: <span class="code">spring-security.xml</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  The XML namespace schema declaration was pointing to <span class="code">spring-security-4.0.xsd</span> while the JAR on the classpath was version <span class="code">4.2.13.RELEASE</span>. Spring Security's namespace handler checks this version and refuses to start if they don't match.<br/><br/>
+  <strong>Before:</strong> <span class="code">spring-security-4.0.xsd</span><br/>
+  <strong>After:</strong> <span class="code">spring-security-4.2.xsd</span><br/><br/>
+  <strong>How to verify:</strong> The error <span class="code">BeanDefinitionParsingException: You cannot use a spring-security-4.0.xsd schema with Spring Security 4.2</span> will no longer appear on startup.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-26</td>
+    <td>Application starts without BeanDefinitionParsingException</td>
+    <td>Tomcat configured with the project</td>
+    <td>Deploy and start application</td>
+    <td>1. Start Tomcat<br/>2. Check console/log output for BeanDefinitionParsingException</td>
+    <td>No BeanDefinitionParsingException. Application context loads successfully.</td>
+    <td><span class="tag-build">BUILD</span></td>
+  </tr>
+  <tr>
+    <td>TC-27</td>
+    <td>Login page is accessible after start</td>
+    <td>App started successfully</td>
+    <td>GET http://localhost:8082/onboarding/login</td>
+    <td>1. Open browser<br/>2. Navigate to the login URL</td>
+    <td>HTTP 200. Login page renders without error.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>10. Test Area 9 – Spring Security Version Corrected (pom.xml)</h2>
+<h3>File: <span class="code">pom.xml</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  All four Spring Security dependencies were set to version <span class="code">4.2.22.RELEASE</span> — a version that <strong>does not exist</strong> on Maven Central. This caused Eclipse to show build path errors because the JAR files could never be downloaded.<br/><br/>
+  <strong>Before:</strong> <span class="code">4.2.22.RELEASE</span> (non-existent)<br/>
+  <strong>After:</strong> <span class="code">4.2.13.RELEASE</span> (actual final release of Spring Security 4.2.x)<br/><br/>
+  Artifacts fixed: <span class="code">spring-security-core</span>, <span class="code">spring-security-config</span>, <span class="code">spring-security-web</span>, <span class="code">spring-security-ldap</span>
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-28</td>
+    <td>Maven resolves all Spring Security JARs</td>
+    <td>Maven and internet access available</td>
+    <td>Run mvn dependency:resolve</td>
+    <td>1. Open terminal in project root<br/>2. Run <span class="code">mvn dependency:resolve</span><br/>3. Check output for any "missing artifact" errors</td>
+    <td>BUILD SUCCESS. All 4 spring-security-*.jar files downloaded and resolved.</td>
+    <td><span class="tag-build">BUILD</span></td>
+  </tr>
+  <tr>
+    <td>TC-29</td>
+    <td>No version 4.2.22 in pom.xml</td>
+    <td>pom.xml accessible</td>
+    <td>N/A</td>
+    <td>1. Open pom.xml<br/>2. Search for "4.2.22"</td>
+    <td>Zero occurrences of 4.2.22</td>
+    <td><span class="tag-build">BUILD</span></td>
+  </tr>
+  <tr>
+    <td>TC-30</td>
+    <td>All 4 Security artifacts resolve to 4.2.13</td>
+    <td>Maven available</td>
+    <td>Run mvn dependency:tree</td>
+    <td>1. Run <span class="code">mvn dependency:tree</span><br/>2. Filter output for spring-security</td>
+    <td>spring-security-core, config, web, ldap all show version <span class="code">4.2.13.RELEASE</span></td>
+    <td><span class="tag-build">BUILD</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>11. Test Area 10 – Spring Framework Version Unified (pom.xml)</h2>
+<h3>File: <span class="code">pom.xml</span></h3>
+
+<div class="section-box">
+  <strong>What was changed:</strong><br/>
+  The project had mixed Spring Framework versions — some dependencies were on <span class="code">4.2.5.RELEASE</span> and others on <span class="code">4.3.30.RELEASE</span>. Mixed versions can cause <span class="code">ClassCastException</span>, <span class="code">NoSuchMethodError</span>, or subtle runtime bugs because different modules have different internal APIs.<br/><br/>
+  <strong>After:</strong> A single property <span class="code">&lt;org.springframework-version&gt;4.3.30.RELEASE&lt;/org.springframework-version&gt;</span> is used by all Spring artifacts. 4.3.30 is the final maintenance release of the Spring 4.3.x line.
+</div>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Test Case Name</th>
+    <th>Pre-condition</th>
+    <th>Input</th>
+    <th>Steps to Test</th>
+    <th>Expected Result</th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <td>TC-31</td>
+    <td>All Spring artifacts on same version</td>
+    <td>Maven available</td>
+    <td>Run mvn dependency:tree</td>
+    <td>1. Run <span class="code">mvn dependency:tree</span><br/>2. Filter lines containing "springframework"<br/>3. Check all versions</td>
+    <td>All Spring modules (spring-context, spring-web, spring-webmvc, spring-orm, spring-tx) show <span class="code">4.3.30.RELEASE</span></td>
+    <td><span class="tag-build">BUILD</span></td>
+  </tr>
+  <tr>
+    <td>TC-32</td>
+    <td>Application context loads with unified Spring version</td>
+    <td>Tomcat running</td>
+    <td>Start application</td>
+    <td>1. Deploy application<br/>2. Check for ClassCastException or NoSuchMethodError in startup log</td>
+    <td>No version-related runtime errors. Application context initializes cleanly.</td>
+    <td><span class="tag-positive">POSITIVE</span></td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>12. Summary Table</h2>
+
+<table>
+  <tr>
+    <th>TC #</th>
+    <th>Area</th>
+    <th>Test Name</th>
+    <th>Type</th>
+    <th>Result</th>
+  </tr>
+  <tr><td>TC-01</td><td>SQL Injection</td><td>Valid user, correct old password</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-02</td><td>SQL Injection</td><td>Valid user, wrong old password</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+  <tr><td>TC-03</td><td>SQL Injection</td><td>Username does not exist</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+  <tr><td>TC-04</td><td>SQL Injection</td><td>SQL Injection in username field</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-05</td><td>SQL Injection</td><td>SQL Injection in password field</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-06</td><td>SQL Injection</td><td>Password stored as BCrypt</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-07</td><td>Password Logging</td><td>getPasswordBcrypt returns valid hash</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-08</td><td>Password Logging</td><td>Plaintext NOT written to log</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-09</td><td>Password Logging</td><td>Two calls produce different hashes</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-10</td><td>MD5 Removal</td><td>getPasswordMD5 no longer exists</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-11</td><td>MD5 Removal</td><td>comparePassword works with BCrypt</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-12</td><td>MD5 Removal</td><td>comparePassword rejects wrong password</td><td><span class="tag-negative">NEGATIVE</span></td><td></td></tr>
+  <tr><td>TC-13</td><td>Race Condition</td><td>No shared instance variables</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-14</td><td>Race Condition</td><td>Concurrent requests independent</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-15</td><td>Path Traversal</td><td>Valid filename served correctly</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-16</td><td>Path Traversal</td><td>../ blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-17</td><td>Path Traversal</td><td>Windows separator blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-18</td><td>Path Traversal</td><td>Script tag in filename blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-19</td><td>Path Traversal</td><td>Null byte blocked</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-20</td><td>Path Traversal</td><td>Canonical path check blocks escape</td><td><span class="tag-security">SECURITY</span></td><td></td></tr>
+  <tr><td>TC-21</td><td>Hardcoded Path</td><td>createFile writes to tmpdir</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-22</td><td>Hardcoded Path</td><td>No C:/ path in source</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-23</td><td>Hardcoded Path</td><td>createFile returns correct filename</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-24</td><td>Log Path</td><td>Log written to Tomcat logs dir</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-25</td><td>Log Path</td><td>No hardcoded C:/work in config</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-26</td><td>Security Schema</td><td>App starts without schema exception</td><td><span class="tag-build">BUILD</span></td><td></td></tr>
+  <tr><td>TC-27</td><td>Security Schema</td><td>Login page accessible</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+  <tr><td>TC-28</td><td>Spring Security Version</td><td>Maven resolves all Security JARs</td><td><span class="tag-build">BUILD</span></td><td></td></tr>
+  <tr><td>TC-29</td><td>Spring Security Version</td><td>No 4.2.22 in pom.xml</td><td><span class="tag-build">BUILD</span></td><td></td></tr>
+  <tr><td>TC-30</td><td>Spring Security Version</td><td>All 4 artifacts on 4.2.13</td><td><span class="tag-build">BUILD</span></td><td></td></tr>
+  <tr><td>TC-31</td><td>Spring Framework Version</td><td>All Spring artifacts same version</td><td><span class="tag-build">BUILD</span></td><td></td></tr>
+  <tr><td>TC-32</td><td>Spring Framework Version</td><td>Context loads with unified version</td><td><span class="tag-positive">POSITIVE</span></td><td></td></tr>
+</table>
+
+<br/>
+<table>
+  <tr>
+    <th>Total Test Cases</th>
+    <th>Security Tests</th>
+    <th>Positive Tests</th>
+    <th>Negative Tests</th>
+    <th>Build Tests</th>
+  </tr>
+  <tr>
+    <td style="text-align:center"><strong>32</strong></td>
+    <td style="text-align:center; background-color:#FFD7D7"><strong>14</strong></td>
+    <td style="text-align:center; background-color:#D7FFD7"><strong>11</strong></td>
+    <td style="text-align:center; background-color:#FFF3CD"><strong>4</strong></td>
+    <td style="text-align:center; background-color:#D0E8FF"><strong>7</strong></td>
+  </tr>
+</table>
+
+<br/>
+<hr/>
+<p style="font-size:9pt; color:grey;">Document generated: May 14, 2026 | Hermes Onboarding Tool – Phase 1 Security Fixes | GitHub Copilot (assisted)</p>
+</body>
+</html>

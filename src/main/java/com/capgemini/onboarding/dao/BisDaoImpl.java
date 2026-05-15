@@ -1,0 +1,83 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.Collections;
+import java.util.List;
+
+import javax.persistence.TypedQuery;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.capgemini.onboarding.model.BISCompositeKey;
+import com.capgemini.onboarding.model.Bis;
+import com.capgemini.onboarding.model.Country;
+
+
+@Repository
+public class BisDaoImpl implements BisDao{
+
+	private static final Logger logger = LoggerFactory.getLogger(BisDaoImpl.class);
+
+	@Autowired
+	private SessionFactory sessionFactory;
+	
+	@Override
+	public List<Bis> listBis(int bundleEmId) {
+		List<Bis> bisList =  null; 
+		Session session = this.sessionFactory.getCurrentSession();
+		TypedQuery<Bis> query = session.createNamedQuery("listBisByBundleEm");
+		query.setParameter("bis_bundleEm_id", bundleEmId);
+		bisList = query.getResultList();
+		Collections.sort(bisList);
+		return bisList;	
+		
+	}
+
+	@Override
+	public Bis getBisById(int id) {
+		Session session = this.sessionFactory.getCurrentSession();	
+		Bis bis = null;
+		bis = (Bis) session.load(Bis.class, new Integer(id));
+		logger.info("bis loaded successfully,bis details=" + bis);
+		return bis;
+		
+	}
+
+	@Override
+	public List<Bis> fullListOfBis() {
+		Session session = this.sessionFactory.getCurrentSession();
+		Criteria criteria = session.createCriteria(Bis.class);
+		
+		//criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+		List<Bis> list = criteria.list();
+		//for(Bis bis : list){
+			logger.info("BIS List::"+list);
+		//}
+		Collections.sort(list);
+		return list;	
+	} 
+	
+	@Override
+	public List<Bis> fullListOfBis(Boolean type) {
+		Session session = this.sessionFactory.getCurrentSession();
+		Criteria criteria = session.createCriteria(Bis.class);
+		
+		criteria.add(Restrictions.isNull("isDeleted"));
+		
+		
+		//criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+		List<Bis> list = criteria.list();
+		for(Bis bis : list){
+			logger.info("country List::"+bis);
+		}
+		Collections.sort(list);
+		return list;	
+	} 
+}

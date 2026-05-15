@@ -1,0 +1,149 @@
+package com.capgemini.offboarding.Scheduler;
+
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.capgemini.onboarding.mail.MailSender;
+import com.capgemini.onboarding.mail.MailUtility;
+import com.capgemini.onboarding.model.BisPMOMap;
+import com.capgemini.onboarding.model.DLList;
+import com.capgemini.onboarding.model.Employee;
+import com.capgemini.onboarding.model.RmPMO;
+import com.capgemini.onboarding.model.Spoc;
+import com.capgemini.onboarding.service.EmployeeService;
+import com.capgemini.onboarding.service.PreOnbEmployeeService;
+import com.capgemini.onboarding.util.PsaMailUtility;
+
+
+
+/*@EnableScheduling*/
+public class OffboardingRevocationEmails {
+	
+	private Logger logger = Logger.getLogger(OffboardingRevocationEmails.class);
+	
+	@Autowired(required = true)
+	private EmployeeService employeeService;
+	
+	@Autowired(required = true)
+	private PreOnbEmployeeService preOnbEmpService;
+	
+    @Autowired(required = true)
+    private PsaMailUtility psaMailUtility;
+	
+
+	//@Scheduled(cron="0 05 15 * * ?")  //(cron = "${cron.expression}") http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html
+    public void OffboardingEmails() throws Exception{
+        
+		logger.info("OffboardingEmails() Method executed at  :: "+ new Date());
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, -1);
+		List<Employee> OffboardingList = new ArrayList<Employee>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date dateWithoutTime = sdf.parse(sdf.format(new Date(cal.getTimeInMillis())));
+		OffboardingList = employeeService.getOffboardingEmpList(dateWithoutTime);
+		
+		//for( Object employee : OffboardingList) {
+			
+		for(int employee = 0; employee < OffboardingList.size(); employee++) {
+			Employee emp = (Employee) OffboardingList.get(employee);
+			boolean isOnshore = false; boolean isOffshore = false;
+			boolean hasPSAID = false;
+			
+			if(emp.getCountry().getCountryId() != 2) {
+				isOnshore = true;
+			}else {
+				isOffshore = true;
+			}
+			if(emp.getPsaId() != null) {
+				hasPSAID = true;
+			}
+			if(isOnshore || hasPSAID) {
+				String RMPMOMailSubj = "[Onboarding Tool] Initiate Offboarding Process for "+emp.getCorpId();
+				RmPMO rmPMO = preOnbEmpService.getRmPmoDetails();
+				MailSender.send(psaMailUtility.prepareSheduleMailId(rmPMO.getEmail()), MailUtility.RMPMOMail(rmPMO.getRmPmoName(),emp,isOnshore,hasPSAID) , RMPMOMailSubj);
+			}
+			
+			if(isOffshore) {
+				String bisPMOMailSubj = "[Onboarding Tool] Offboarding Process for "+emp.getCorpId();
+				BisPMOMap bisPmo = employeeService.getBISFromPMO(emp.getBis().getBis_id());
+				MailSender.send(psaMailUtility.prepareSheduleMailId(bisPmo.getPmo_email()),MailUtility.BISPMOMail(emp,bisPmo), bisPMOMailSubj);
+			}
+			
+			if(isOnshore) {
+				
+				String RMMailSubj = "[Onboarding Tool] Offboarding Process for"+emp.getCorpId();
+				Spoc spocRec = this.employeeService.getSpocFromCountry(1); // Since mail should be triggered to Valerie for onshore countries
+				MailSender.send(psaMailUtility.prepareSheduleMailId(spocRec.getSpocEmail()), MailUtility.RMMail(emp,spocRec),RMMailSubj);
+			}
+			
+			
+				String BISPMODLEmailSubj= "[Onboarding Tool] HRA Revocation Request for "+emp.getCorpId();
+				DLList dlBisPMO = preOnbEmpService.getDLListbyRole("BISPMO");
+				MailSender.send(psaMailUtility.prepareSheduleMailId(dlBisPMO.getEmail()),MailUtility.BISPMODLMail(emp),BISPMODLEmailSubj);
+		 
+			
+			String JIRAIDConfluSubj = "[Onboarding Tool] Offboarding JIRA & Confluence ID - "+emp.getCorpId();
+			DLList dl = preOnbEmpService.getDLListbyRole("JIRAID");
+			MailSender.send(psaMailUtility.prepareSheduleMailId(dl.getEmail()),MailUtility.JIRARevokeMail(emp,dl),JIRAIDConfluSubj);
+		}
+        
+    }
+	
+
+	//@Scheduled(cron="0 45 19 * * ?")  //(cron = "${cron.expression}") http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html
+    public void EMAlertEmails() throws Exception{
+		
+		Date todayDate = new Date();
+		LocalDateTime localDateTimeToday = LocalDateTime.ofInstant(todayDate.toInstant(), ZoneId.systemDefault());
+		
+		TimeZone zone = TimeZone.getTimeZone("Europe/Paris");
+		Calendar currentDay =  Calendar.getInstance(zone);
+		currentDay.setTime(todayDate);
+		
+		
+		switch(currentDay.get(Calendar.DAY_OF_WEEK)) { //assuming actual offboarding date is always a weekday.
+			
+			case Calendar.THURSDAY :	currentDay.add(Calendar.DAY_OF_MONTH, 4);
+										break;
+			
+			case Calendar.FRIDAY : 		currentDay.add(Calendar.DAY_OF_MONTH, 4);
+										break;
+			
+			default : 					currentDay.add(Calendar.DAY_OF_MONTH, 2);
+										break;
+		}
+		
+		Date actualOffboardingDate = currentDay.getTime();
+		
+		
+		
+		List<Employee> toBeOffboardingList = new ArrayList<Employee>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date dateWithoutTime = sdf.parse(sdf.format(actualOffboardingDate));
+		toBeOffboardingList = employeeService.getOffboardingEmpList(dateWithoutTime);
+		
+		Employee emp = null; Employee EMRecord = null;
+		for(Object employee : toBeOffboardingList) {
+			
+			emp = (Employee) employee;
+			EMRecord = emp.getEM();
+			String EMMailSubj = "Offboarding will be initiated for CORP ID "+emp.getCorpId();
+			DLList dl = preOnbEmpService.getDLListbyRole("RMPMO");
+			MailSender.send(psaMailUtility.prepareSheduleMailId(EMRecord.getEmail()), MailUtility.EMOffboardingMail(emp, dl, EMRecord,dateWithoutTime),EMMailSubj);
+			
+			
+		
+		}
+	
+	}
+
+}

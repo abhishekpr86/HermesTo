@@ -1,0 +1,60 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Order;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.capgemini.onboarding.model.Country;
+import com.capgemini.onboarding.model.Employee;
+import com.capgemini.onboarding.model.EmployeeRoles;
+
+@Repository
+public class CountryDaoImpl implements CountryDao {
+
+	private static final Logger logger = LoggerFactory.getLogger(CountryDaoImpl.class);
+
+	@Autowired
+	private SessionFactory sessionFactory;
+	
+	@Override
+	
+	public List<Country> listCountry() {
+		// TODO Auto-generated method stub
+		Session session = this.sessionFactory.getCurrentSession();
+		List<Country> countryList = session.createQuery("from Country").list();
+		for(Country country : countryList){
+			logger.info("country List::"+country);
+		}
+		Collections.sort(countryList);
+		return countryList;	
+	}
+	
+	
+	
+	@Override
+	public Country getCountryById(int id) {
+		Session session = this.sessionFactory.getCurrentSession();		
+		Country country = (Country) session.load(Country.class, new Integer(id));
+		logger.info("country loaded successfully, country details=" + country);
+		return country;
+		
+	}
+
+	@Override
+	public List<Country> getCountryListOrderWise() {
+		Session session = this.sessionFactory.getCurrentSession();
+		Criteria criteria = session.createCriteria(Country.class);
+		criteria.addOrder(Order.asc("countryId"));
+		return criteria.list();
+	}
+
+}

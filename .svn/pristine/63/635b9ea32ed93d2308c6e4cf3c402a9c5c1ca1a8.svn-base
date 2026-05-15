@@ -1,0 +1,12 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.List;
+
+import com.capgemini.onboarding.model.Vendor;
+
+public interface VendorDao {
+	
+	public List<Vendor> listVendor(int countryId, boolean isBundleEMReq);
+
+	public Vendor getVendorById(int id);
+}

@@ -1,0 +1,63 @@
+package com.capgemini.onboarding.model;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.Proxy;
+import org.hibernate.envers.Audited;
+
+@Entity
+@Table(name="primary_program")
+@Audited
+@Proxy(lazy = false)
+public class PrimaryProgram implements Comparable<PrimaryProgram>{
+	
+	private int primaryProgramId;
+	private String primaryProgramName;
+	
+	
+	/**
+	 * @return the primaryProgramId
+	 */
+	@Id
+	@GeneratedValue
+	@Column(name = "primary_program_id",nullable = false)
+	public int getPrimaryProgramId() {
+		return primaryProgramId;
+	}
+
+	/**
+	 * @param primaryProgramId the primaryProgramId to set
+	 */
+	
+	public void setPrimaryProgramId(int primaryProgramId) {
+		this.primaryProgramId = primaryProgramId;
+	}
+	
+	/**
+	 * @return the primaryProgramName
+	 */
+	
+    @Column(name = "primary_program_name", nullable = false)
+	public String getPrimaryProgramName() {
+		return primaryProgramName;
+	}
+
+    /**
+	 * @param primaryProgramName the primaryProgramName to set
+	 */
+	public void setPrimaryProgramName(String primaryProgramName) {
+		this.primaryProgramName = primaryProgramName;
+	}
+
+	
+	@Override
+	public int compareTo(PrimaryProgram primProg) {
+		return this.getPrimaryProgramName().compareTo(primProg.getPrimaryProgramName());
+	}
+
+	
+}

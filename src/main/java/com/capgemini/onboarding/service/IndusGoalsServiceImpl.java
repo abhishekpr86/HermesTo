@@ -1,0 +1,40 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+import org.springframework.transaction.annotation.Propagation;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.capgemini.onboarding.dao.BisDao;
+import com.capgemini.onboarding.dao.IndusGoalsDao;
+import com.capgemini.onboarding.model.IndusGoals;
+
+@Service
+public class IndusGoalsServiceImpl implements IndusGoalsService {
+
+	@Autowired
+	private IndusGoalsDao indusGoalsDao;
+	
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public IndusGoals getIndusGoalsId(int id) {
+		
+		return this.indusGoalsDao.getIndusGoalsId(id);
+	}
+
+	@Override
+	@Transactional
+	public List<IndusGoals> listIndusGoals() {
+		
+		return this.indusGoalsDao.listIndusGoals();
+	}
+	
+	@Override
+	@Transactional
+	public List<IndusGoals> listIndusGoalsPreOnb(){
+		return this.indusGoalsDao.listIndusGoalsPreOnb();
+	}
+
+}

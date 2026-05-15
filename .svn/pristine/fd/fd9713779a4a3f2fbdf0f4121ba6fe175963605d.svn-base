@@ -1,0 +1,46 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.Collections;
+import java.util.List;
+
+import javax.persistence.TypedQuery;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Restrictions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.capgemini.onboarding.model.ResourceManager;
+import com.capgemini.onboarding.model.State;
+
+@Repository
+public class ResourceManagerDaoImpl implements ResourceManagerDao{
+
+	private static final Logger logger = LoggerFactory.getLogger(ResourceManagerDaoImpl.class);
+
+	@Autowired
+	private SessionFactory sessionFactory;
+
+	@Override
+	public List<ResourceManager> listResourceManager(int countryId) {
+		Session session = this.sessionFactory.getCurrentSession();
+		TypedQuery<ResourceManager> query = session.createNamedQuery("listResourceManagerByCountry");		
+		query.setParameter("countryId", countryId);
+		List<ResourceManager> listRmgr = query.getResultList();
+		Collections.sort(listRmgr);
+		return listRmgr;	
+	}
+
+	@Override
+	public ResourceManager getResourceManagerById(int id) {
+		Session session = this.sessionFactory.getCurrentSession();		
+		ResourceManager resourceMgrList = (ResourceManager) session.load(ResourceManager.class, new Integer(id));
+		logger.info("ResourceManager loaded successfully, ResourceManager details=" + resourceMgrList);
+		return resourceMgrList;
+	
+}
+}

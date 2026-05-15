@@ -1,0 +1,14 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.List;
+
+import com.capgemini.onboarding.model.Bis;
+
+public interface BisDao {
+
+	public List<Bis> listBis(int bundleEmId);
+	public Bis getBisById(int id);
+	public List<Bis> fullListOfBis();
+	public List<Bis> fullListOfBis(Boolean type);
+	
+}

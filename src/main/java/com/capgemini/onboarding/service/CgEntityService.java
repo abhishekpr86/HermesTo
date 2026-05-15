@@ -1,0 +1,15 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.capgemini.onboarding.model.CGEntityDetail;
+
+@Service
+public interface CgEntityService {
+
+	public List<CGEntityDetail> listCgEntity();	
+	public CGEntityDetail getCgEntityById(int cgEntityId);
+	public void updateCGEntity(CGEntityDetail cg);
+}

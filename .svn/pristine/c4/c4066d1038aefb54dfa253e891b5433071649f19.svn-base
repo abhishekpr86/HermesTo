@@ -1,0 +1,14 @@
+package com.capgemini.onboarding.dao;
+
+import java.util.List;
+
+import com.capgemini.onboarding.model.IndusGoals;
+
+public interface IndusGoalsDao {
+
+	public IndusGoals getIndusGoalsId(int id);
+	 
+    public List<IndusGoals> listIndusGoals();
+    
+    public List<IndusGoals> listIndusGoalsPreOnb();
+}

@@ -1,0 +1,16 @@
+package com.capgemini.onboarding.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.capgemini.onboarding.model.PrimaryProgram;
+
+@Service
+public interface PrimaryProgramService {
+	
+	public List<PrimaryProgram> listPrimaryProgram();
+	public PrimaryProgram getPrimaryProgramById(int id);
+	
+
+}

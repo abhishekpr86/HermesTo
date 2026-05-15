@@ -1,5 +1,5 @@
 .metadata/
 .settings/
 .svn/
-.project/
-.classpath/
+.project
+.classpath

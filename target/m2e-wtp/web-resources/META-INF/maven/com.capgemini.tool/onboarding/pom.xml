@@ -156,11 +156,19 @@
 			<version>${org.slf4j-version}</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- Routes org.apache.log4j.* calls to SLF4J/Logback — no Java source changes needed -->
+		<!-- Routes org.apache.log4j.* (Log4j 1.x) calls to SLF4J/Logback — no Java source changes needed -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>log4j-over-slf4j</artifactId>
 			<version>${org.slf4j-version}</version>
+		</dependency>
+		<!-- Routes org.apache.logging.log4j.* (Log4j 2.x) API calls to SLF4J/Logback -->
+		<!-- Needed because Apache POI 5.x pulls in log4j-api (Log4j2) transitively -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-to-slf4j</artifactId>
+			<version>2.24.3</version>
+			<scope>runtime</scope>
 		</dependency>
 		<!-- Logback: replaces Log4j 1.x as the actual logging backend -->
 		<dependency>

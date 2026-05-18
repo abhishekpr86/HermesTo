@@ -43,9 +43,9 @@
 <h1>Phase 2 – Java 21 / Spring Boot 3.x Migration: Change Summary</h1>
 <p class="meta">
   <strong>Project:</strong> Hermes Onboarding Tool &nbsp;|&nbsp;
-  <strong>Date:</strong> 15 May 2026 &nbsp;|&nbsp;
+  <strong>Date:</strong> 18 May 2026 &nbsp;|&nbsp;
   <strong>Phase:</strong> 2 – Modernisation (Java 8 → Java 21, Spring Boot 3.x migration) &nbsp;|&nbsp;
-  <strong>Steps Completed:</strong> 1 &amp; 2 of 7
+  <strong>Steps Completed:</strong> 1, 2 &amp; 3 of 7
 </p>
 
 <div class="toc">
@@ -66,7 +66,11 @@
     <li><a href="#step2-dashboard">Step 2 – DashboardController: 'dashboard' Model Attribute</a></li>
     <li><a href="#step2-report">Step 2 – ReportController: Stale javassist Import Removed</a></li>
     <li><a href="#step2-jsp">Step 2 – JSP Views: commandName → modelAttribute (38 occurrences)</a></li>
-    <li><a href="#pending">Pending Steps 3–7</a></li>
+    <li><a href="#step3-deps">Step 3 – Logging: Log4j 1.x Removed, Logback Added (pom.xml)</a></li>
+    <li><a href="#step3-logbackxml">Step 3 – logback.xml: New Logging Configuration File</a></li>
+    <li><a href="#step3-scope">Step 3 – Bugfix: log4j-over-slf4j Scope (runtime → compile)</a></li>
+    <li><a href="#step3-log4j2">Step 3 – Bugfix: log4j-to-slf4j Added (POI 5.x transitive)</a></li>
+    <li><a href="#pending">Pending Steps 4–7</a></li>
   </ol>
 </div>
 
@@ -91,10 +95,10 @@
   </div>
 </div>
 <div class="roadmap-step">
-  <div class="step-num next">3</div>
+  <div class="step-num done">3</div>
   <div class="step-content">
-    <div class="step-title">Log4j 1.x → Logback / SLF4J &nbsp; <span class="badge-next">NEXT</span></div>
-    <div class="step-desc">Log4j 1.2.15 is End-of-Life (2015) and has known CVEs. Replace with Logback (Spring Boot default) and clean up <code>slf4j-log4j12</code> bridge.</div>
+    <div class="step-title">Log4j 1.x → Logback / SLF4J &nbsp; <span class="badge-done">DONE</span></div>
+    <div class="step-desc">Log4j 1.2.15 (EOL 2015, CVE-2019-17571) replaced with Logback 1.5.18. Added two bridging JARs so no source code changes were needed. Created logback.xml, renamed log4j.properties to .bak.</div>
   </div>
 </div>
 <div class="roadmap-step">
@@ -127,11 +131,11 @@
 </div>
 
 <!-- SUMMARY DASHBOARD -->
-<h2 id="summary">2. Summary Dashboard – Steps 1 &amp; 2 (Completed)</h2>
+<h2 id="summary">2. Summary Dashboard – Steps 1, 2 &amp; 3 (Completed)</h2>
 <div class="summary-grid">
-  <div class="summary-box"><div class="num">37</div><div class="lbl">Files Modified</div></div>
+  <div class="summary-box"><div class="num">40</div><div class="lbl">Files Modified</div></div>
   <div class="summary-box"><div class="num">38</div><div class="lbl">JSP commandName Fixes</div></div>
-  <div class="summary-box"><div class="num">15</div><div class="lbl">Dependency Versions Upgraded</div></div>
+  <div class="summary-box"><div class="num">18</div><div class="lbl">Dependency Versions Updated</div></div>
   <div class="summary-box"><div class="num">7</div><div class="lbl">XML Schema Updates</div></div>
 </div>
 
@@ -283,8 +287,194 @@
   </tr>
 </table>
 
+<h3>Step 3 Changes</h3>
+<table>
+  <tr><th>#</th><th>File</th><th>Change</th><th>Status</th></tr>
+  <tr>
+    <td>24</td>
+    <td class="file-path">pom.xml</td>
+    <td>SLF4J version: <code>1.7.36</code> → <code>2.0.16</code> (required by Logback 1.5.x)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>25</td>
+    <td class="file-path">pom.xml</td>
+    <td>Removed <code>log4j:log4j:1.2.15</code> (EOL, CVE-2019-17571) and <code>slf4j-log4j12</code> bridge (no longer needed)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>26</td>
+    <td class="file-path">pom.xml</td>
+    <td>Added <code>log4j-over-slf4j:2.0.16</code> (compile scope) — fake <code>org.apache.log4j.*</code> classes that route to SLF4J; no source changes needed in 35 files using Log4j 1.x API</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>27</td>
+    <td class="file-path">pom.xml</td>
+    <td>Added <code>log4j-to-slf4j:2.24.3</code> (runtime) — bridges Log4j 2.x API to SLF4J; required because Apache POI 5.x pulls <code>log4j-api</code> (Log4j 2) as a transitive dependency</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>28</td>
+    <td class="file-path">pom.xml</td>
+    <td>Added <code>logback-classic:1.5.18</code> (runtime) — new logging backend, replaces Log4j 1.x engine</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>29</td>
+    <td class="file-path">src/main/resources/logback.xml</td>
+    <td>New file — Logback config: ConsoleAppender + RollingFileAppender to <code>${catalina.home}/logs/onboard.log</code> (5 MB, 10 backups); <code>com.capgemini</code> at INFO, Hibernate/Spring at WARN</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>30</td>
+    <td class="file-path">src/main/resources/log4j.properties</td>
+    <td>Renamed to <code>log4j.properties.bak</code> — removed from classpath; Logback ignores this file format entirely</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+</table>
+
+<!-- STEP 3 DETAIL SECTIONS -->
+<h2 id="step3-deps">16. Step 3 – Logging Dependencies: Log4j 1.x Removed, Logback Added (pom.xml)</h2>
+<div class="section-intro">
+  Log4j 1.x (version 1.2.15) reached <strong>End-of-Life in 2015</strong> and carries known unpatched CVEs (CVE-2019-17571).
+  The entire logging backend was replaced with <strong>Logback 1.5.18</strong> — the default for Spring Boot and the most widely used Java logging backend.
+  Two bridging JARs ensure no source code changes are required despite two different Log4j API generations being used in the codebase.
+</div>
+<div class="reason">
+  <strong>Runtime logging flow after Step 3:</strong><br>
+  35 source files using <code>org.apache.log4j.Logger</code> → <strong>log4j-over-slf4j</strong> → SLF4J → Logback<br>
+  13 DAO files using <code>org.slf4j.Logger</code> → SLF4J directly → Logback<br>
+  POI 5.x internal calls using Log4j 2 API → <strong>log4j-to-slf4j</strong> → SLF4J → Logback<br>
+  All three paths write to the same <code>${catalina.home}/logs/onboard.log</code>.
+</div>
+<table>
+  <tr><th>Action</th><th><span class="label-before">BEFORE</span></th><th><span class="label-after">AFTER</span></th><th>Reason</th></tr>
+  <tr>
+    <td>SLF4J version</td>
+    <td class="before">1.7.36</td>
+    <td class="after">2.0.16</td>
+    <td>SLF4J 2.x required by Logback 1.5.x; API is backward compatible</td>
+  </tr>
+  <tr>
+    <td>Remove <code>log4j:log4j:1.2.15</code></td>
+    <td class="before">Present</td>
+    <td class="after">Removed</td>
+    <td>EOL 2015; CVE-2019-17571; replaced by Logback</td>
+  </tr>
+  <tr>
+    <td>Remove <code>slf4j-log4j12</code></td>
+    <td class="before">Present</td>
+    <td class="after">Removed</td>
+    <td>Was the SLF4J→Log4j 1.x bridge; pointless without Log4j 1.x</td>
+  </tr>
+  <tr>
+    <td>Add <code>log4j-over-slf4j:2.0.16</code></td>
+    <td class="before">Absent</td>
+    <td class="after">compile scope</td>
+    <td>Provides fake <code>org.apache.log4j.*</code> — intercepts Log4j 1.x API calls and reroutes them to SLF4J transparently. Compile scope is required so the compiler can resolve <code>Logger</code> in 35 source files</td>
+  </tr>
+  <tr>
+    <td>Add <code>log4j-to-slf4j:2.24.3</code></td>
+    <td class="before">Absent</td>
+    <td class="after">runtime scope</td>
+    <td>Apache POI 5.x uses the Log4j <strong>2.x</strong> API internally. Without this bridge Tomcat logs: <em>"Log4j2 could not find a logging implementation. Using SimpleLogger"</em>. Runtime scope is correct — no source file imports Log4j 2 classes</td>
+  </tr>
+  <tr>
+    <td>Add <code>logback-classic:1.5.18</code></td>
+    <td class="before">Absent</td>
+    <td class="after">runtime scope</td>
+    <td>The actual logging engine. Reads logback.xml and writes formatted output to file and console</td>
+  </tr>
+</table>
+
+<h2 id="step3-logbackxml">17. Step 3 – logback.xml: New Logging Configuration File</h2>
+<p class="file-path">src/main/resources/logback.xml (NEW FILE)</p>
+<div class="section-intro">
+  Logback does not read <code>log4j.properties</code> — it uses its own XML configuration format.
+  This new file replaces <code>log4j.properties</code> and defines where logs go, at what level, and in what format.
+</div>
+<div class="reason">
+  <strong>Key decisions:</strong><br>
+  &bull; <strong>RollingFileAppender</strong> → <code>${catalina.home}/logs/onboard.log</code>, rolling at 5 MB, keeping 10 backups<br>
+  &bull; <strong>ConsoleAppender</strong> → stdout (visible in Eclipse console during development)<br>
+  &bull; <code>com.capgemini</code> package → INFO level → both appenders<br>
+  &bull; Hibernate and Spring packages → WARN (reduces framework noise)<br>
+  &bull; Root logger → INFO → file only
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE – log4j.properties (key lines)</span></th><th width="50%"><span class="label-after">AFTER – logback.xml</span></th></tr>
+  <tr>
+    <td class="before">log4j.rootLogger=INFO, R
+log4j.appender.R=org.apache.log4j.RollingFileAppender
+log4j.appender.R.File=${catalina.home}/logs/onboard.log
+log4j.appender.R.MaxFileSize=5MB
+log4j.appender.R.MaxBackupIndex=10
+log4j.appender.R.layout.ConversionPattern=
+  %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n</td>
+    <td class="after">&lt;configuration&gt;
+  ConsoleAppender (STDOUT)
+  RollingFileAppender (FILE)
+    → ${catalina.home}/logs/onboard.log
+    → 5MB max, 10 backups
+    → pattern: %d %-5level %logger{1}:%line - %msg%n
+  &lt;logger name="com.capgemini" level="INFO"&gt;
+    → STDOUT + FILE
+  &lt;logger name="org.hibernate" level="WARN"/&gt;
+  &lt;logger name="org.springframework" level="WARN"/&gt;
+  &lt;root level="INFO"&gt; → FILE only &lt;/root&gt;
+&lt;/configuration&gt;</td>
+  </tr>
+</table>
+
+<h2 id="step3-scope">18. Step 3 – Bugfix: log4j-over-slf4j Scope (runtime → compile)</h2>
+<p class="file-path">pom.xml</p>
+<div class="reason">
+  <strong>Problem:</strong> <code>log4j-over-slf4j</code> was initially added with <code>&lt;scope&gt;runtime&lt;/scope&gt;</code>.
+  Because 35 source files directly <code>import org.apache.log4j.Logger</code>, the compiler needs this JAR visible at compile time.
+  With runtime scope, Eclipse/Maven reported: <em>"Logger cannot be resolved"</em> on every such file.<br><br>
+  <strong>Fix:</strong> Remove <code>&lt;scope&gt;runtime&lt;/scope&gt;</code> so it defaults to <code>compile</code>.
+  The JAR is now on the classpath at both compile time (resolves the import) and runtime (routes calls to Logback).
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE (broken)</span></th><th width="50%"><span class="label-after">AFTER (fixed)</span></th></tr>
+  <tr>
+    <td class="before">&lt;artifactId&gt;log4j-over-slf4j&lt;/artifactId&gt;
+&lt;version&gt;2.0.16&lt;/version&gt;
+&lt;scope&gt;runtime&lt;/scope&gt;
+&lt;!-- javac cannot see org.apache.log4j.Logger --&gt;</td>
+    <td class="after">&lt;artifactId&gt;log4j-over-slf4j&lt;/artifactId&gt;
+&lt;version&gt;2.0.16&lt;/version&gt;
+&lt;!-- no scope tag = compile (default) --&gt;</td>
+  </tr>
+</table>
+
+<h2 id="step3-log4j2">19. Step 3 – Bugfix: log4j-to-slf4j Added (Apache POI 5.x Log4j 2.x transitive)</h2>
+<p class="file-path">pom.xml</p>
+<div class="reason">
+  <strong>Problem:</strong> After Step 3 was deployed, Tomcat startup printed:<br>
+  <code>Log4j2 could not find a logging implementation. Please add log4j-core to the classpath. Using SimpleLogger...</code><br><br>
+  <strong>Root cause:</strong> Apache POI 5.x internally uses the <strong>Log4j 2.x API</strong> (<code>org.apache.logging.log4j</code>) — a completely separate product from Log4j 1.x.
+  The <code>log4j-over-slf4j</code> bridge only handles Log4j <strong>1.x</strong> calls.
+  Log4j 2.x found its API JAR (pulled in by POI) but no implementation engine, so it fell back to its built-in minimal logger.<br><br>
+  <strong>Fix:</strong> Add <code>log4j-to-slf4j</code> (published by the Apache Log4j 2 project itself), which intercepts Log4j 2 API calls and routes them through SLF4J to Logback.
+  Runtime scope is correct — no application source file imports Log4j 2 classes.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE (error on startup)</span></th><th width="50%"><span class="label-after">AFTER (silent, all logs to Logback)</span></th></tr>
+  <tr>
+    <td class="before">&lt;!-- POI 5.x log4j-api calls unhandled → SimpleLogger fallback --&gt;</td>
+    <td class="after">&lt;dependency&gt;
+  &lt;groupId&gt;org.apache.logging.log4j&lt;/groupId&gt;
+  &lt;artifactId&gt;log4j-to-slf4j&lt;/artifactId&gt;
+  &lt;version&gt;2.24.3&lt;/version&gt;
+  &lt;scope&gt;runtime&lt;/scope&gt;
+&lt;/dependency&gt;</td>
+  </tr>
+</table>
+
 <!-- CHANGE 1 -->
-<h2 id="java-version">3. pom.xml – Java Version Property</h2>
+<h2 id="java-version">20. pom.xml – Java Version Property</h2>
 <div class="section-intro">The <code>&lt;java-version&gt;</code> property controls the JDK target for compilation and is also referenced by other plugins.</div>
 <div class="reason">
   <strong>Reason:</strong> The entire Phase 2 goal is to run on Java 21 LTS.
@@ -300,7 +490,7 @@
 </table>
 
 <!-- CHANGE 2 -->
-<h2 id="compiler-plugin">4. pom.xml – maven-compiler-plugin</h2>
+<h2 id="compiler-plugin">21. pom.xml – maven-compiler-plugin</h2>
 <div class="section-intro">This plugin controls how Maven compiles the Java source files. The old version (2.5.1, released 2012) was incompatible with Java 21.</div>
 <div class="reason">
   <strong>Reason:</strong><br>
@@ -333,7 +523,7 @@
 </table>
 
 <!-- CHANGE 3 -->
-<h2 id="eclipse-plugin">5. pom.xml – maven-eclipse-plugin Removed</h2>
+<h2 id="eclipse-plugin">22. pom.xml – maven-eclipse-plugin Removed</h2>
 <div class="section-intro">This plugin was completely removed from the build.</div>
 <div class="reason">
   <strong>Reason (two problems):</strong><br><br>
@@ -371,7 +561,7 @@ No replacement needed.</td>
 </table>
 
 <!-- CHANGE 4 -->
-<h2 id="exec-plugin">6. pom.xml – exec-maven-plugin</h2>
+<h2 id="exec-plugin">23. pom.xml – exec-maven-plugin</h2>
 <div class="section-intro">Used to run the <code>Scheduler</code> main class via Maven. Upgraded to a Java 21 compatible version.</div>
 <div class="reason">
   <strong>Reason:</strong> Version <code>1.2.1</code> (2012) uses deprecated internal Maven APIs removed in Maven 3.9+.
@@ -388,7 +578,7 @@ No replacement needed.</td>
 </table>
 
 <!-- CHANGE 5 -->
-<h2 id="war-plugin">7. pom.xml – maven-war-plugin</h2>
+<h2 id="war-plugin">24. pom.xml – maven-war-plugin</h2>
 <div class="section-intro">Used to package the application as a WAR file for Tomcat deployment.</div>
 <div class="reason">
   <strong>Reason:</strong> Version <code>3.0.0</code> (2016) does not correctly handle the Java 9+ module descriptor (<code>module-info.class</code>) and has a known conflict with Servlet 4.0+ APIs used in Tomcat 9/10.
@@ -408,7 +598,7 @@ No replacement needed.</td>
 </table>
 
 <!-- CHANGE 6 -->
-<h2 id="employee-java">8. Employee.java – Illegal sun.* Import Removed</h2>
+<h2 id="employee-java">25. Employee.java – Illegal sun.* Import Removed</h2>
 <p class="file-path">src/main/java/com/capgemini/onboarding/model/Employee.java — line 36</p>
 <div class="section-intro">
   The error reported was:<br>
@@ -439,7 +629,7 @@ import sun.security.util.Password;  // ← illegal on Java 9+
 </table>
 
 <!-- STEP 2 DETAIL SECTIONS -->
-<h2 id="step2-deps">9. Step 2 – Dependency Version Upgrades (pom.xml)</h2>
+<h2 id="step2-deps">26. Step 2 – Dependency Version Upgrades (pom.xml)</h2>
 <div class="section-intro">All library versions updated to the latest stable releases compatible with Java 21 and the Spring 5.3 / Hibernate 5.6 stack.</div>
 <div class="reason">
   <strong>Why upgrade dependencies now (Step 2)?</strong><br>
@@ -460,7 +650,7 @@ import sun.security.util.Password;  // ← illegal on Java 9+
   <tr><td>Quartz</td><td class="before">2.2.3</td><td class="after">2.3.2</td><td>Latest Quartz 2.x; Java 11+ compatibility fixes</td></tr>
 </table>
 
-<h2 id="step2-webxml">10. Step 2 – web.xml: hibernate4 → hibernate5 Filter</h2>
+<h2 id="step2-webxml">27. Step 2 – web.xml: hibernate4 → hibernate5 Filter</h2>
 <p class="file-path">src/main/webapp/WEB-INF/web.xml — line 27</p>
 <div class="reason">
   <strong>Reason:</strong> The <code>org.springframework.orm.hibernate4</code> package was removed from Spring 5.x. The correct package for Hibernate 5 support is <code>org.springframework.orm.hibernate5</code>. Without this fix, Tomcat startup fails with <code>ClassNotFoundException</code>.
@@ -477,7 +667,7 @@ import sun.security.util.Password;  // ← illegal on Java 9+
   </tr>
 </table>
 
-<h2 id="step2-schemas">11. Step 2 – Spring XML Schema Version Updates</h2>
+<h2 id="step2-schemas">28. Step 2 – Spring XML Schema Version Updates</h2>
 <p class="file-path">servlet-context.xml &amp; security-context.xml</p>
 <div class="reason">
   <strong>Reason:</strong> Hard-coded versioned XSD URLs (e.g. <code>spring-beans-4.0.xsd</code>) cause schema validation failures because Spring 5.3 JARs only ship <code>spring-beans.xsd</code>. Using version-less XSD names always resolves to the schema bundled in the JAR on the classpath — so no version mismatch is possible.
@@ -498,7 +688,7 @@ spring-task.xsd
   </tr>
 </table>
 
-<h2 id="step2-security">12. Step 2 – spring-security.xml Schema Update</h2>
+<h2 id="step2-security">29. Step 2 – spring-security.xml Schema Update</h2>
 <p class="file-path">src/main/webapp/WEB-INF/spring/appServlet/spring-security.xml</p>
 <div class="reason">
   <strong>Reason:</strong> Schema must match the Spring Security version on the classpath. <code>spring-security-4.2.xsd</code> does not exist in the Spring Security 5.8 JAR. Using version-less <code>spring-security-5.8.xsd</code> (or just the namespace URI) resolves correctly.
@@ -513,7 +703,7 @@ spring-security-5.8.xsd</td>
   </tr>
 </table>
 
-<h2 id="step2-dashboard">13. Step 2 – DashboardController: Missing Model Attribute</h2>
+<h2 id="step2-dashboard">30. Step 2 – DashboardController: Missing Model Attribute</h2>
 <p class="file-path">src/main/java/com/capgemini/onboarding/DashboardController.java</p>
 <div class="reason">
   <strong>Reason:</strong> Spring 5 enforces strict binding — <code>&lt;form:form modelAttribute="dashboard"&gt;</code> in the JSP requires an object named <code>"dashboard"</code> to be present in the model. Spring 4 was lenient and allowed the form to render with null; Spring 5 throws:<br>
@@ -531,7 +721,7 @@ return "dashboard";</td>
 </table>
 <p style="margin-top:8px">Same fix applied to the <strong>POST handler</strong> as well.</p>
 
-<h2 id="step2-report">14. Step 2 – ReportController: Stale javassist Import Removed</h2>
+<h2 id="step2-report">31. Step 2 – ReportController: Stale javassist Import Removed</h2>
 <p class="file-path">src/main/java/com/capgemini/onboarding/ReportController.java — line 73</p>
 <div class="reason">
   <strong>Reason:</strong> <code>javassist</code> was previously available as a transitive dependency of the old Hibernate version. After upgrading to Hibernate 5.6, javassist is no longer on the classpath. The import was never used — removing it fixes the compile error <em>"The import javassist cannot be resolved"</em>.
@@ -545,7 +735,7 @@ return "dashboard";</td>
   </tr>
 </table>
 
-<h2 id="step2-jsp">15. Step 2 – JSP Views: commandName → modelAttribute (38 occurrences, 29 files)</h2>
+<h2 id="step2-jsp">32. Step 2 – JSP Views: commandName → modelAttribute (38 occurrences, 29 files)</h2>
 <div class="reason">
   <strong>Reason:</strong> In Spring 5, the <code>commandName</code> attribute on <code>&lt;form:form&gt;</code> is deprecated and no longer honoured. It silently falls back to the default name <code>"command"</code> instead of using the value you set. Since no bean named <code>"command"</code> exists in the model, Spring 5 throws:
   <code>IllegalStateException: Neither BindingResult nor plain target object for bean name 'command' available as request attribute</code><br>
@@ -573,7 +763,7 @@ searchUsers.jsp (2) &nbsp;|&nbsp; training.jsp &nbsp;|&nbsp; trainingForm.jsp &n
 </p>
 
 <!-- PENDING -->
-<h2 id="pending">16. Pending Steps (3–7)</h2>
+<h2 id="pending">33. Pending Steps (4–7)</h2>
 <div class="section-intro">
   These are the remaining Phase 2 steps to be completed in order.
   Each step depends on the previous one being stable and compiling cleanly.
@@ -588,9 +778,9 @@ searchUsers.jsp (2) &nbsp;|&nbsp; training.jsp &nbsp;|&nbsp; trainingForm.jsp &n
   </tr>
   <tr>
     <td>3</td>
-    <td>Log4j 1.2.15 → Logback 1.5.x<br>Remove slf4j-log4j12 bridge<br>Add logback.xml config</td>
-    <td class="file-path">pom.xml, log4j.properties → logback.xml</td>
-    <td><span class="badge-pending">Pending</span></td>
+    <td>Log4j 1.2.15 → Logback 1.5.18<br>Removed: <code>log4j:log4j</code>, <code>slf4j-log4j12</code><br>Added: <code>log4j-over-slf4j</code> (compile), <code>log4j-to-slf4j</code> (runtime), <code>logback-classic</code> (runtime)<br>Created <code>logback.xml</code>; renamed <code>log4j.properties</code> → <code>.bak</code></td>
+    <td class="file-path">pom.xml, logback.xml (new), log4j.properties.bak</td>
+    <td><span class="badge-done">Done</span></td>
   </tr>
   <tr>
     <td>4</td>

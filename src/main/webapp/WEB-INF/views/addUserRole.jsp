@@ -97,7 +97,7 @@
 				</div>
 			</c:if>
 		
-		<form:form action="${addAction}" commandName="users" method="POST" id="searchEmployee">
+		<form:form action="${addAction}" modelAttribute="users" method="POST" id="searchEmployee">
 		<div class="formRow">
 					<div class="col50per">
 						<div class="fieldLbl">

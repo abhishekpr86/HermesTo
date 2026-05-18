@@ -115,7 +115,7 @@
 			</c:if>
 
 
-			<form:form action="${editAction}" commandName="users" method="POST"
+			<form:form action="${editAction}" modelAttribute="users" method="POST"
 				id="adduser">
 				<div class="formRow">
 					<div class="col50per">

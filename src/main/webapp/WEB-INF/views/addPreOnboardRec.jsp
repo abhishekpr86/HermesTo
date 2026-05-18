@@ -139,7 +139,7 @@
 				</div>
 			</c:if>
 
-			<form:form action="${addAction}" commandName="preonbemployee" method="POST" id="addemployee" autocomplete="off">
+			<form:form action="${addAction}" modelAttribute="preonbemployee" method="POST" id="addemployee" autocomplete="off">
 			<section>
 			<h1 style="color:#86A5F7">Resource Information:</h1>
 			<div class="formFields clearfix">

@@ -55,7 +55,7 @@
 				</div>
 			</c:if>
 		
-		<form:form action="${addAction}" commandName="employee" method="POST" id="registration">
+		<form:form action="${addAction}" modelAttribute="employee" method="POST" id="registration">
 		<div class="formRow">
                 <div class="col50per">
                     <div class="fieldLbl"><label>Emp ID <span class="req">*</span>:</label></div>

@@ -93,7 +93,7 @@
 				</div>
 			</c:if>
 		
-		<form:form action="${searchAction}" commandName="employee" method="POST" id="searchEmployee">
+		<form:form action="${searchAction}" modelAttribute="employee" method="POST" id="searchEmployee">
 		<div class="formRow">
                 <div class="col50per">
                     <div class="fieldLbl"><label>Emp ID :</label></div>

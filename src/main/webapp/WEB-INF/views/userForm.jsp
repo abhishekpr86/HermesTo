@@ -101,7 +101,7 @@
 			</c:if>
 
 
-			<form:form action="${searchAction}" commandName="users" method="POST"
+			<form:form action="${searchAction}" modelAttribute="users" method="POST"
 				id="adduser">
 				<div class="formRow">
 					<div class="col50per">

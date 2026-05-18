@@ -102,7 +102,7 @@
 						class="pull-left" alt="Change Password">
 					<div class="changePasswordForm">
 						<s:form name="ChangePasswordForm" method="post" modelAttribute="changePwd"
-						commandName="changePwd"
+						modelAttribute="changePwd"
 							action="${pageContext.request.contextPath}/changePassword.htm"
 							OnSubmit="return fncSubmit();">
 

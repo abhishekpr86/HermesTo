@@ -93,7 +93,7 @@
 				</div>
 			</c:if>
 		
-		<form:form action="${searchAction}" commandName="users" method="POST" id="searchEmployee">
+		<form:form action="${searchAction}" modelAttribute="users" method="POST" id="searchEmployee">
 		<div class="formRow">
 					<div class="col50per">
 						<div class="fieldLbl">
@@ -156,7 +156,7 @@
 					        <%--<td><a href="<c:url value='/users/${users.userName}' />" 
 							title="Delete" class="editIcn"></a></td>
 							 <td> <a href="#" onclick="userRoleObject(${users})" title="Delete" class="editIcn"> </a></td> --%>
-							 <form:form action="${deleteAction}" commandName="users" method="POST" id="addemployee">
+							 <form:form action="${deleteAction}" modelAttribute="users" method="POST" id="addemployee">
 							 	
 							 	
 							 	 <input type="submit" title="Delete" id="btnSubmit" class="editIcn"/> 

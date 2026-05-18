@@ -42,7 +42,7 @@
 				</div>
 			</c:if>
 
-			<form:form action="${addAction}" commandName="training" method="POST"
+			<form:form action="${addAction}" modelAttribute="training" method="POST"
 				id="registration">
 				<div class="formRow">
 					<div class="col50per">

@@ -75,7 +75,7 @@
 		</nav>
 	</header>
 	<section class="main-content">
-		<form:form commandName="resourceList" method="POST" >
+		<form:form modelAttribute="resourceList" method="POST" >
 			<input type="text" value="test">
 		</form:form>
 	</section>

@@ -110,7 +110,7 @@ margin-bottom: 5px !important;
 					<h3>${successMsg}</h3>
 				</div>
 			</c:if>
-			<form:form action="${editAction}" commandName="employee"
+			<form:form action="${editAction}" modelAttribute="employee"
 				method="POST" id="editEmployee">
 				<div class="formRow">
 					<div class="col50per">

@@ -19,7 +19,7 @@
 <body>
 
 <section class="main-content">
-	<form:form  commandName="dashboard" method="POST" id="countryDropdown">
+	<form:form  modelAttribute="dashboard" method="POST" id="countryDropdown">
 					<div class="pull-left">
 						<div class="fieldLbl">
 							<label>Country : </label>

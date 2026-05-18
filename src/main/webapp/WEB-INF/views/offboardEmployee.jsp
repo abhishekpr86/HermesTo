@@ -106,7 +106,7 @@
 					<c:url var="getReplacementNameByCorpID" value="/getReplacementNameByCorpID" />
 					<c:url var="checkActualDate" value="/checkActualDate" />
 
-					<form:form action="${offboardAction}" commandName="employee" method="POST" id="offboardEmployee">
+					<form:form action="${offboardAction}" modelAttribute="employee" method="POST" id="offboardEmployee">
 						<div class="formRow">
 							<div class="col50per">
 								<div class="fieldLbl">

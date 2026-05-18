@@ -23,7 +23,7 @@ pageEncoding="ISO-8859-1"%>
                 	<div class="logoutframe-block">
                 		<h1>Please provide username</h1>
              <c:url var="addAction" value="/sendDefaultPasswordMail"></c:url>
-             <form:form action="${addAction}" commandName="user" method="POST" id="roleSelect"> 
+             <form:form action="${addAction}" modelAttribute="user" method="POST" id="roleSelect"> 
               		
              <div class="form-group">
              	

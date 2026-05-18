@@ -31,7 +31,7 @@ pageEncoding="ISO-8859-1"%>
              	 <c:url var="addAction" value="/main"></c:url>
               </c:if>
               
-             <form:form action="${addAction}" commandName="role" method="POST" id="roleSelect"> 
+             <form:form action="${addAction}" modelAttribute="role" method="POST" id="roleSelect"> 
              
              <%-- <div class="inputField">
 							<form:select path="role" id="role_id"

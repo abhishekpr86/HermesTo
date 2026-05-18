@@ -92,6 +92,7 @@ public class DashboardController {
 			model.addAttribute("listCountry", this.countryService.listCountry());   
 			createPyramidChart(model,request);
 			getTotalBISListData(model, request, OnboardingConstants.EMP_RESOURCE_ACTIVE);//mehens-BIS
+			model.addAttribute("dashboard", new Employee());
 			 return "dashboard";
        }
        
@@ -124,6 +125,7 @@ public class DashboardController {
 				createPyramidChart(model,request);
 				//listActiveEmployeesByBIS(model, request, OnboardingConstants.EMP_RESOURCE_ACTIVE);//mehens
 				getTotalBISListData(model, request, OnboardingConstants.EMP_RESOURCE_ACTIVE);
+				model.addAttribute("dashboard", new Employee());
 				
            } catch (IOException e) {
 				// TODO Auto-generated catch block

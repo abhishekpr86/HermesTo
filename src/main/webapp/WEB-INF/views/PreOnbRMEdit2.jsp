@@ -97,7 +97,7 @@ margin-bottom: 5px !important;
 					<h3>${successMsg}</h3>
 				</div>
 			</c:if>
-			<form:form action="${editAction}" commandName="employee" method="POST" id="editEmployee">
+			<form:form action="${editAction}" modelAttribute="employee" method="POST" id="editEmployee">
 			<section>
 			
 			<br>

@@ -102,7 +102,7 @@
 				</div>
 			</c:if>
 
-			<form:form action="${searchAction}" commandName="moodle" method="POST" id="moodleReport">
+			<form:form action="${searchAction}" modelAttribute="moodle" method="POST" id="moodleReport">
 				
 				<div class="formRow">
 					<div class="col50per">

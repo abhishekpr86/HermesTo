@@ -45,21 +45,28 @@
   <strong>Project:</strong> Hermes Onboarding Tool &nbsp;|&nbsp;
   <strong>Date:</strong> 15 May 2026 &nbsp;|&nbsp;
   <strong>Phase:</strong> 2 – Modernisation (Java 8 → Java 21, Spring Boot 3.x migration) &nbsp;|&nbsp;
-  <strong>Step:</strong> 1 of 7 – Java Version Upgrade
+  <strong>Steps Completed:</strong> 1 &amp; 2 of 7
 </p>
 
 <div class="toc">
   <strong>Contents</strong>
   <ol class="toc">
     <li><a href="#roadmap">Full Migration Roadmap</a></li>
-    <li><a href="#summary">Summary Dashboard (Step 1)</a></li>
+    <li><a href="#summary">Summary Dashboard (Steps 1 &amp; 2)</a></li>
     <li><a href="#java-version">pom.xml – Java Version Property</a></li>
     <li><a href="#compiler-plugin">pom.xml – maven-compiler-plugin</a></li>
     <li><a href="#eclipse-plugin">pom.xml – maven-eclipse-plugin Removed</a></li>
     <li><a href="#exec-plugin">pom.xml – exec-maven-plugin</a></li>
     <li><a href="#war-plugin">pom.xml – maven-war-plugin</a></li>
     <li><a href="#employee-java">Employee.java – Illegal sun.* Import Removed</a></li>
-    <li><a href="#pending">Pending Steps 2–7</a></li>
+    <li><a href="#step2-deps">Step 2 – Dependency Version Upgrades (pom.xml)</a></li>
+    <li><a href="#step2-webxml">Step 2 – web.xml: hibernate4 → hibernate5 Filter</a></li>
+    <li><a href="#step2-schemas">Step 2 – Spring XML Schema Version Updates</a></li>
+    <li><a href="#step2-security">Step 2 – spring-security.xml Schema Update</a></li>
+    <li><a href="#step2-dashboard">Step 2 – DashboardController: 'dashboard' Model Attribute</a></li>
+    <li><a href="#step2-report">Step 2 – ReportController: Stale javassist Import Removed</a></li>
+    <li><a href="#step2-jsp">Step 2 – JSP Views: commandName → modelAttribute (38 occurrences)</a></li>
+    <li><a href="#pending">Pending Steps 3–7</a></li>
   </ol>
 </div>
 
@@ -77,16 +84,16 @@
   </div>
 </div>
 <div class="roadmap-step">
-  <div class="step-num next">2</div>
+  <div class="step-num done">2</div>
   <div class="step-content">
-    <div class="step-title">Spring 4.3 → 5.3.x + Spring Security 4.2 → 5.8.x &nbsp; <span class="badge-next">NEXT</span></div>
-    <div class="step-desc">Spring 4.x does not support Java 9+ module system officially. Upgrade to Spring 5.3 (last Spring 5 LTS) and Spring Security 5.8 (last pre-Jakarta version). This is the last step before the jakarta namespace change.</div>
+    <div class="step-title">Spring 4.3 → 5.3.x + Spring Security 4.2 → 5.8.x &nbsp; <span class="badge-done">DONE</span></div>
+    <div class="step-desc">Upgraded Spring Framework to 5.3.39, Spring Security to 5.8.16, Hibernate to 5.6.15, AspectJ to 1.9.22, POI to 5.3.0, Jackson to 2.17.2, Servlet API to 4.0.1, MySQL connector-j to 8.4.0. Updated all Spring XML schema locations to version-less XSDs. Fixed hibernate4 → hibernate5 filter in web.xml. Fixed DashboardController missing model attribute. Fixed JSP commandName → modelAttribute across 29 views.</div>
   </div>
 </div>
 <div class="roadmap-step">
-  <div class="step-num">3</div>
+  <div class="step-num next">3</div>
   <div class="step-content">
-    <div class="step-title">Log4j 1.x → Logback / SLF4J &nbsp; <span class="badge-pending">PENDING</span></div>
+    <div class="step-title">Log4j 1.x → Logback / SLF4J &nbsp; <span class="badge-next">NEXT</span></div>
     <div class="step-desc">Log4j 1.2.15 is End-of-Life (2015) and has known CVEs. Replace with Logback (Spring Boot default) and clean up <code>slf4j-log4j12</code> bridge.</div>
   </div>
 </div>
@@ -120,14 +127,15 @@
 </div>
 
 <!-- SUMMARY DASHBOARD -->
-<h2 id="summary">2. Summary Dashboard – Step 1 (Completed)</h2>
+<h2 id="summary">2. Summary Dashboard – Steps 1 &amp; 2 (Completed)</h2>
 <div class="summary-grid">
-  <div class="summary-box"><div class="num">2</div><div class="lbl">Files Modified</div></div>
-  <div class="summary-box"><div class="num">6</div><div class="lbl">Individual Changes</div></div>
-  <div class="summary-box"><div class="num">1</div><div class="lbl">Plugin Removed</div></div>
-  <div class="summary-box"><div class="num">3</div><div class="lbl">Plugins Upgraded</div></div>
+  <div class="summary-box"><div class="num">37</div><div class="lbl">Files Modified</div></div>
+  <div class="summary-box"><div class="num">38</div><div class="lbl">JSP commandName Fixes</div></div>
+  <div class="summary-box"><div class="num">15</div><div class="lbl">Dependency Versions Upgraded</div></div>
+  <div class="summary-box"><div class="num">7</div><div class="lbl">XML Schema Updates</div></div>
 </div>
 
+<h3>Step 1 Changes</h3>
 <table>
   <tr><th>#</th><th>File</th><th>Change</th><th>Status</th></tr>
   <tr>
@@ -164,6 +172,113 @@
     <td>6</td>
     <td class="file-path">model/Employee.java</td>
     <td>Removed illegal <code>import sun.security.util.Password;</code> — unused import; blocked by Java 9+ module system</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+</table>
+
+<h3>Step 2 Changes</h3>
+<table>
+  <tr><th>#</th><th>File</th><th>Change</th><th>Status</th></tr>
+  <tr>
+    <td>7</td>
+    <td class="file-path">pom.xml</td>
+    <td>Spring Framework: <code>4.3.30.RELEASE</code> → <code>5.3.39</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td class="file-path">pom.xml</td>
+    <td>Spring Security: <code>4.2.13.RELEASE</code> → <code>5.8.16</code> (new property <code>org.spring-security-version</code> added)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td class="file-path">pom.xml</td>
+    <td>Hibernate ORM: <code>5.2.1.Final</code> → <code>5.6.15.Final</code> (envers + c3p0 sub-modules aligned)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td class="file-path">pom.xml</td>
+    <td>AspectJ: <code>1.7.4</code> → <code>1.9.22</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td class="file-path">pom.xml</td>
+    <td>SLF4J: <code>1.7.5</code> → <code>1.7.36</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td class="file-path">pom.xml</td>
+    <td>Apache POI: <code>4.1.0</code> → <code>5.3.0</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td class="file-path">pom.xml</td>
+    <td>Jackson: <code>2.5.0 / 2.9.8</code> → <code>2.17.2</code> (all modules aligned)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td class="file-path">pom.xml</td>
+    <td>Servlet API: <code>servlet-api 2.5</code> → <code>javax.servlet-api 4.0.1</code>; JSP API: <code>2.1</code> → <code>2.3.3</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td class="file-path">pom.xml</td>
+    <td>MySQL connector: <code>mysql:mysql-connector-java:8.0.16</code> → <code>com.mysql:mysql-connector-j:8.4.0</code> (new groupId/artifactId)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td class="file-path">pom.xml</td>
+    <td>Quartz: <code>2.2.3</code> → <code>2.3.2</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td class="file-path">web.xml</td>
+    <td>OpenSessionInViewFilter: <code>hibernate4</code> → <code>hibernate5</code> package</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td class="file-path">servlet-context.xml</td>
+    <td>All versioned XSD schema locations replaced with version-less equivalents (spring-beans, spring-context, spring-mvc, spring-task)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td class="file-path">security-context.xml</td>
+    <td>Same versioned XSD → version-less XSD replacement</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td class="file-path">spring-security.xml</td>
+    <td>Schema: <code>spring-beans-4.1.xsd</code> → <code>spring-beans.xsd</code>; <code>spring-security-4.2.xsd</code> → <code>spring-security-5.8.xsd</code></td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>21</td>
+    <td class="file-path">DashboardController.java</td>
+    <td>Added <code>model.addAttribute("dashboard", new Employee())</code> to both GET and POST handlers — Spring 5 requires bound object present in model</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>22</td>
+    <td class="file-path">ReportController.java</td>
+    <td>Removed stale <code>import javassist.bytecode.stackmap.TypeData.ClassName</code> — unused; javassist no longer on classpath after Hibernate 5.6 upgrade</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>23</td>
+    <td class="file-path">29 JSP view files (38 occurrences)</td>
+    <td>Replaced <code>commandName=</code> with <code>modelAttribute=</code> on all <code>&lt;form:form&gt;</code> tags — <code>commandName</code> is silently ignored in Spring 5, causing <code>IllegalStateException: bean name 'command' not available</code></td>
     <td><span class="badge-done">Done</span></td>
   </tr>
 </table>
@@ -323,8 +438,142 @@ import sun.security.util.Password;  // ← illegal on Java 9+
   </tr>
 </table>
 
+<!-- STEP 2 DETAIL SECTIONS -->
+<h2 id="step2-deps">9. Step 2 – Dependency Version Upgrades (pom.xml)</h2>
+<div class="section-intro">All library versions updated to the latest stable releases compatible with Java 21 and the Spring 5.3 / Hibernate 5.6 stack.</div>
+<div class="reason">
+  <strong>Why upgrade dependencies now (Step 2)?</strong><br>
+  Spring 4.x and Hibernate 5.2 were released before Java 9's module system. Running them on Java 21 causes reflection warnings, missing internal API errors, and startup failures. Spring 5.3 is the last release series before the jakarta.* namespace change — making it the safest intermediate target before tackling Step 5.
+</div>
+<table>
+  <tr><th>Dependency</th><th>Before</th><th>After</th><th>Reason</th></tr>
+  <tr><td>Spring Framework</td><td class="before">4.3.30.RELEASE</td><td class="after">5.3.39</td><td>Last Spring 5 LTS; supports Java 21; still uses javax.* namespace</td></tr>
+  <tr><td>Spring Security</td><td class="before">4.2.13.RELEASE</td><td class="after">5.8.16</td><td>Last Spring Security 5 release; aligns with Spring 5.3</td></tr>
+  <tr><td>Hibernate ORM</td><td class="before">5.2.1.Final</td><td class="after">5.6.15.Final</td><td>Last Hibernate 5 release; still uses javax.persistence; bug fixes for Java 11+</td></tr>
+  <tr><td>AspectJ</td><td class="before">1.7.4</td><td class="after">1.9.22</td><td>Required by Spring 5.3 for AOP support on Java 21</td></tr>
+  <tr><td>SLF4J</td><td class="before">1.7.5</td><td class="after">1.7.36</td><td>Latest SLF4J 1.7.x; compatible with Log4j 1.x bridge until Step 3</td></tr>
+  <tr><td>Apache POI</td><td class="before">4.1.0</td><td class="after">5.3.0</td><td>Security fixes; API-stable for existing code (no deprecated constants used)</td></tr>
+  <tr><td>Jackson</td><td class="before">2.5.0 / 2.9.8 (mismatched)</td><td class="after">2.17.2 (all modules)</td><td>Aligned all modules; 2.5.x had known CVEs</td></tr>
+  <tr><td>Servlet API</td><td class="before">servlet-api 2.5</td><td class="after">javax.servlet-api 4.0.1</td><td>Correct artifact for Tomcat 9; 2.5 was the ancient Servlet container artifact</td></tr>
+  <tr><td>JSP API</td><td class="before">jsp-api 2.1</td><td class="after">javax.servlet.jsp-api 2.3.3</td><td>Matches Tomcat 9 JSP implementation</td></tr>
+  <tr><td>MySQL Connector</td><td class="before">mysql:mysql-connector-java:8.0.16</td><td class="after">com.mysql:mysql-connector-j:8.4.0</td><td>Oracle renamed the artifact from 8.0.33 onwards; new groupId/artifactId required</td></tr>
+  <tr><td>Quartz</td><td class="before">2.2.3</td><td class="after">2.3.2</td><td>Latest Quartz 2.x; Java 11+ compatibility fixes</td></tr>
+</table>
+
+<h2 id="step2-webxml">10. Step 2 – web.xml: hibernate4 → hibernate5 Filter</h2>
+<p class="file-path">src/main/webapp/WEB-INF/web.xml — line 27</p>
+<div class="reason">
+  <strong>Reason:</strong> The <code>org.springframework.orm.hibernate4</code> package was removed from Spring 5.x. The correct package for Hibernate 5 support is <code>org.springframework.orm.hibernate5</code>. Without this fix, Tomcat startup fails with <code>ClassNotFoundException</code>.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">&lt;filter-class&gt;
+  org.springframework.orm.hibernate4.support.OpenSessionInViewFilter
+&lt;/filter-class&gt;</td>
+    <td class="after">&lt;filter-class&gt;
+  org.springframework.orm.hibernate5.support.OpenSessionInViewFilter
+&lt;/filter-class&gt;</td>
+  </tr>
+</table>
+
+<h2 id="step2-schemas">11. Step 2 – Spring XML Schema Version Updates</h2>
+<p class="file-path">servlet-context.xml &amp; security-context.xml</p>
+<div class="reason">
+  <strong>Reason:</strong> Hard-coded versioned XSD URLs (e.g. <code>spring-beans-4.0.xsd</code>) cause schema validation failures because Spring 5.3 JARs only ship <code>spring-beans.xsd</code>. Using version-less XSD names always resolves to the schema bundled in the JAR on the classpath — so no version mismatch is possible.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">spring-beans-4.0.xsd
+spring-context-3.0.xsd
+spring-mvc-3.0.xsd
+spring-task-3.2.xsd
+spring-batch-2.2.xsd</td>
+    <td class="after">spring-beans.xsd
+spring-context.xsd
+spring-mvc.xsd
+spring-task.xsd
+(spring-batch removed — not used)</td>
+  </tr>
+</table>
+
+<h2 id="step2-security">12. Step 2 – spring-security.xml Schema Update</h2>
+<p class="file-path">src/main/webapp/WEB-INF/spring/appServlet/spring-security.xml</p>
+<div class="reason">
+  <strong>Reason:</strong> Schema must match the Spring Security version on the classpath. <code>spring-security-4.2.xsd</code> does not exist in the Spring Security 5.8 JAR. Using version-less <code>spring-security-5.8.xsd</code> (or just the namespace URI) resolves correctly.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">spring-beans-4.1.xsd
+spring-security-4.2.xsd</td>
+    <td class="after">spring-beans.xsd
+spring-security-5.8.xsd</td>
+  </tr>
+</table>
+
+<h2 id="step2-dashboard">13. Step 2 – DashboardController: Missing Model Attribute</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/DashboardController.java</p>
+<div class="reason">
+  <strong>Reason:</strong> Spring 5 enforces strict binding — <code>&lt;form:form modelAttribute="dashboard"&gt;</code> in the JSP requires an object named <code>"dashboard"</code> to be present in the model. Spring 4 was lenient and allowed the form to render with null; Spring 5 throws:<br>
+  <code>IllegalStateException: Neither BindingResult nor plain target object for bean name 'command' available as request attribute</code>
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE – GET handler</span></th><th width="50%"><span class="label-after">AFTER – GET handler</span></th></tr>
+  <tr>
+    <td class="before">getTotalBISListData(model, request, ...);
+return "dashboard";</td>
+    <td class="after">getTotalBISListData(model, request, ...);
+model.addAttribute("dashboard", new Employee());
+return "dashboard";</td>
+  </tr>
+</table>
+<p style="margin-top:8px">Same fix applied to the <strong>POST handler</strong> as well.</p>
+
+<h2 id="step2-report">14. Step 2 – ReportController: Stale javassist Import Removed</h2>
+<p class="file-path">src/main/java/com/capgemini/onboarding/ReportController.java — line 73</p>
+<div class="reason">
+  <strong>Reason:</strong> <code>javassist</code> was previously available as a transitive dependency of the old Hibernate version. After upgrading to Hibernate 5.6, javassist is no longer on the classpath. The import was never used — removing it fixes the compile error <em>"The import javassist cannot be resolved"</em>.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE</span></th><th width="50%"><span class="label-after">AFTER</span></th></tr>
+  <tr>
+    <td class="before">import javassist.bytecode.stackmap.TypeData.ClassName;</td>
+    <td class="after">// Removed — unused stale import; javassist
+// no longer on classpath after Hibernate 5.6</td>
+  </tr>
+</table>
+
+<h2 id="step2-jsp">15. Step 2 – JSP Views: commandName → modelAttribute (38 occurrences, 29 files)</h2>
+<div class="reason">
+  <strong>Reason:</strong> In Spring 5, the <code>commandName</code> attribute on <code>&lt;form:form&gt;</code> is deprecated and no longer honoured. It silently falls back to the default name <code>"command"</code> instead of using the value you set. Since no bean named <code>"command"</code> exists in the model, Spring 5 throws:
+  <code>IllegalStateException: Neither BindingResult nor plain target object for bean name 'command' available as request attribute</code><br>
+  The fix is to replace <code>commandName=</code> with the current <code>modelAttribute=</code> attribute on all form tags.
+</div>
+<table>
+  <tr><th width="50%"><span class="label-before">BEFORE (example)</span></th><th width="50%"><span class="label-after">AFTER (example)</span></th></tr>
+  <tr>
+    <td class="before">&lt;form:form action="${addAction}" commandName="employee" method="POST"&gt;</td>
+    <td class="after">&lt;form:form action="${addAction}" modelAttribute="employee" method="POST"&gt;</td>
+  </tr>
+</table>
+<p><strong>All 29 affected JSP files:</strong></p>
+<p class="file-path">
+dashboard.jsp (3) &nbsp;|&nbsp; addEmployee.jsp &nbsp;|&nbsp; addPreOnboardRec.jsp &nbsp;|&nbsp; addUserRole.jsp &nbsp;|&nbsp;
+allResourceList.jsp &nbsp;|&nbsp; bisRotationReport.jsp &nbsp;|&nbsp; dataInconsistency.jsp &nbsp;|&nbsp;
+EditByBundleEM.jsp &nbsp;|&nbsp; editEmpBISPMORole.jsp &nbsp;|&nbsp; editEmployee.jsp &nbsp;|&nbsp; editUser.jsp &nbsp;|&nbsp;
+forgotPassword.jsp &nbsp;|&nbsp; main.jsp &nbsp;|&nbsp; moodleUserEnrolReport.jsp &nbsp;|&nbsp;
+offboardEmployee.jsp &nbsp;|&nbsp; offBoardingReport.jsp &nbsp;|&nbsp; onboardingRequest.jsp &nbsp;|&nbsp; orphanMgrForm.jsp &nbsp;|&nbsp;
+PreOnboardingEdit.jsp &nbsp;|&nbsp; PreOnboardingEdit_old.jsp &nbsp;|&nbsp; preOnboardingSearch.jsp &nbsp;|&nbsp;
+preOnboardingSearch_old.jsp &nbsp;|&nbsp; PreOnbRMEdit.jsp &nbsp;|&nbsp; PreOnbRMEdit2.jsp &nbsp;|&nbsp;
+pyramid.jsp &nbsp;|&nbsp; replacementEmployees.jsp &nbsp;|&nbsp; report.jsp &nbsp;|&nbsp; resourceList.jsp &nbsp;|&nbsp;
+roleDropdown.jsp &nbsp;|&nbsp; RmPMO.jsp &nbsp;|&nbsp; RmPMO_old.jsp &nbsp;|&nbsp; searchEmployee.jsp &nbsp;|&nbsp;
+searchUsers.jsp (2) &nbsp;|&nbsp; training.jsp &nbsp;|&nbsp; trainingForm.jsp &nbsp;|&nbsp; userForm.jsp
+</p>
+
 <!-- PENDING -->
-<h2 id="pending">9. Pending Steps (2–7)</h2>
+<h2 id="pending">16. Pending Steps (3–7)</h2>
 <div class="section-intro">
   These are the remaining Phase 2 steps to be completed in order.
   Each step depends on the previous one being stable and compiling cleanly.
@@ -333,9 +582,9 @@ import sun.security.util.Password;  // ← illegal on Java 9+
   <tr><th>Step</th><th>Work Item</th><th>Key Files Affected</th><th>Status</th></tr>
   <tr>
     <td>2</td>
-    <td>Spring Framework 4.3.30 → 5.3.x<br>Spring Security 4.2.13 → 5.8.x<br>Hibernate 5.2 → 5.6.x (pre-Jakarta)</td>
-    <td class="file-path">pom.xml</td>
-    <td><span class="badge-next">Next</span></td>
+    <td>Spring Framework 4.3.30 → 5.3.x + Security + Hibernate + JSP fixes</td>
+    <td class="file-path">pom.xml, web.xml, *.xml, DashboardController.java, ReportController.java, 29 JSP files</td>
+    <td><span class="badge-done">Done</span></td>
   </tr>
   <tr>
     <td>3</td>
@@ -370,6 +619,6 @@ import sun.security.util.Password;  // ← illegal on Java 9+
 </table>
 
 <br><br>
-<p class="meta">Document generated: 15 May 2026 &nbsp;|&nbsp; Hermes Onboarding Tool – Phase 2 Migration (Step 1 of 7 complete)</p>
+<p class="meta">Document generated: 15 May 2026 &nbsp;|&nbsp; Hermes Onboarding Tool – Phase 2 Migration (Steps 1 &amp; 2 of 7 complete)</p>
 </body>
 </html>

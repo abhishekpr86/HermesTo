@@ -95,7 +95,7 @@
 		<div class="top_div">
 
 			<div class="resource-type">
-				<form:form commandName="dashboard" method="POST" id="checkemployee">
+				<form:form modelAttribute="dashboard" method="POST" id="checkemployee">
 					<div class="fieldLbl">
 						<label>Resource Type : </label>
 					</div>
@@ -243,7 +243,7 @@
 
 
 		<div class="bottom_div clearfix">
-			<form:form commandName="dashboard" method="POST" id="countryDropdown">
+			<form:form modelAttribute="dashboard" method="POST" id="countryDropdown">
 				<div class="formRowDashBoard clearfix">
 					<div class="col100per">
 						<h2>Resource Pyramid Graph (Active Internals)</h2>
@@ -518,7 +518,7 @@
 		<!-- start -->
 		
 		<div class="bottom_div clearfix">
-			<form:form commandName="dashboard" method="POST" id="bisDropdown">
+			<form:form modelAttribute="dashboard" method="POST" id="bisDropdown">
 				<div class="formRowDashBoard clearfix">
 					<div class="col100per">
 						<h2 class="dashboardListHD">BIS Data (Active Resources)</h2>
